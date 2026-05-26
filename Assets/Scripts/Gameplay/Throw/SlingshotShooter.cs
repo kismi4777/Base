@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /// <summary>
 /// Бросок через натяжение по экрану: вектор от точки касания к текущей позиции пальца/мыши.
 /// Сила и направление задаются pullVector в экранных координатах.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
+[DefaultExecutionOrder(50)]
 public class SlingshotShooter : MonoBehaviour
 {
     [Header("Настройки броска")]
@@ -57,7 +60,7 @@ public class SlingshotShooter : MonoBehaviour
             flightSpeedController = GetComponent<BallFlightSpeedController>();
     }
 
-    void Update()
+    void LateUpdate()
     {
         if (TryBeginAim())
             return;
@@ -127,10 +130,16 @@ public class SlingshotShooter : MonoBehaviour
         trajectory?.HideTrajectory();
     }
 
-    Vector3 CalculateShootForce()
+    Vector2 GetPullVector()
     {
         Vector2 pullVector = (_startScreenPos - _currentScreenPos) / Screen.height;
-        pullVector = Vector2.ClampMagnitude(pullVector, maxPullDistance);
+        pullVector *= AimSensitivitySettings.Sensitivity;
+        return Vector2.ClampMagnitude(pullVector, maxPullDistance);
+    }
+
+    Vector3 CalculateShootForce()
+    {
+        Vector2 pullVector = GetPullVector();
 
         float pullMagnitude = pullVector.magnitude;
         if (pullMagnitude < minPullMagnitude)
@@ -248,8 +257,7 @@ public class SlingshotShooter : MonoBehaviour
     {
         targetPosition = _initialPosition;
 
-        Vector2 pullVector = (_startScreenPos - _currentScreenPos) / Screen.height;
-        pullVector = Vector2.ClampMagnitude(pullVector, maxPullDistance);
+        Vector2 pullVector = GetPullVector();
         float pullMagnitude = pullVector.magnitude;
         if (pullMagnitude < 0.0001f)
             return false;
@@ -276,10 +284,28 @@ public class SlingshotShooter : MonoBehaviour
         if (EventSystem.current == null)
             return false;
 
+        var eventData = new PointerEventData(EventSystem.current);
         if (Input.touchCount > 0)
-            return EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId);
+        {
+            Touch touch = Input.GetTouch(0);
+            eventData.position = touch.position;
+            eventData.pointerId = touch.fingerId;
+        }
+        else
+        {
+            eventData.position = Input.mousePosition;
+            eventData.pointerId = -1;
+        }
 
-        return EventSystem.current.IsPointerOverGameObject();
+        var results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+        for (int i = 0; i < results.Count; i++)
+        {
+            if (results[i].gameObject.GetComponentInParent<Selectable>() != null)
+                return true;
+        }
+
+        return false;
     }
 
     static bool TryGetPointerDown(out int pointerId, out Vector2 screenPos)
