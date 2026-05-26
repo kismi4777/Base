@@ -14,6 +14,8 @@ public class SlingshotShooter : MonoBehaviour
     public float upwardAngle = 1.5f;
     [Tooltip("Минимальная длина натяжения (нормализованная к высоте экрана)")]
     public float minPullMagnitude = 0.02f;
+    [Tooltip("Сила обратного закрута (backspin) при броске")]
+    public float backspinTorque = 3f;
 
     [Header("Связи")]
     [SerializeField] TrajectoryPredictor trajectory;
@@ -135,7 +137,18 @@ public class SlingshotShooter : MonoBehaviour
 
         _rb.isKinematic = false;
         _rb.AddForce(force, ForceMode.Impulse);
-        _rb.AddTorque(transform.right * 10f, ForceMode.Impulse);
+        ApplyBackspin(force);
+    }
+
+    void ApplyBackspin(Vector3 throwForce)
+    {
+        Vector3 horizontal = new(throwForce.x, 0f, throwForce.z);
+        if (horizontal.sqrMagnitude < 0.0001f)
+            return;
+
+        // Ось перпендикулярна направлению броска; минус — backspin (верх мяча назад по полёту).
+        Vector3 spinAxis = Vector3.Cross(Vector3.up, horizontal.normalized);
+        _rb.AddTorque(-spinAxis * backspinTorque, ForceMode.Impulse);
     }
 
     public void ResetBall()

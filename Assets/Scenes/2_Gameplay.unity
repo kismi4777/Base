@@ -258,6 +258,7 @@ GameObject:
   - component: {fileID: 98363365}
   - component: {fileID: 98363371}
   - component: {fileID: 98363370}
+  - component: {fileID: 98363372}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Untagged
@@ -274,8 +275,8 @@ Rigidbody:
   m_GameObject: {fileID: 98363364}
   serializedVersion: 4
   m_Mass: 0.6
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_Drag: 0.12
+  m_AngularDrag: 0.45
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -291,7 +292,7 @@ Rigidbody:
   m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 1
+  m_CollisionDetection: 2
 --- !u!23 &98363366
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -344,7 +345,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 98363364}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 5eb9733024307014eb39aa61d4d6505e, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -375,8 +376,8 @@ Transform:
   m_GameObject: {fileID: 98363364}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.13, z: -2}
-  m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
+  m_LocalPosition: {x: -0.044, y: 2.13, z: -1.953}
+  m_LocalScale: {x: 0.72333616, y: 0.72333616, z: 0.72333616}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1252096858}
@@ -506,6 +507,19 @@ MonoBehaviour:
   upwardAngle: 1.5
   minPullMagnitude: 0.02
   trajectory: {fileID: 1252096856}
+--- !u!114 &98363372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 98363364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff0c51c4d0308ef47a5854a67faab27f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  settings: {fileID: 11400000, guid: cc0e63f99283f60498bcd7892a8c5de6, type: 2}
 --- !u!1 &129522596
 GameObject:
   m_ObjectHideFlags: 0
@@ -641,6 +655,7 @@ GameObject:
   - component: {fileID: 294495315}
   - component: {fileID: 294495314}
   - component: {fileID: 294495313}
+  - component: {fileID: 294495316}
   m_Layer: 0
   m_Name: Hoop (1)
   m_TagString: Untagged
@@ -724,6 +739,19 @@ Transform:
   - {fileID: 1156276425}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 30.428, z: 0}
+--- !u!114 &294495316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 294495312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3561e3e1380677a4086d4d84d657d4b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  surfaceType: 1
 --- !u!1 &304797454
 GameObject:
   m_ObjectHideFlags: 0
@@ -1817,6 +1845,7 @@ GameObject:
   - component: {fileID: 1102798684}
   - component: {fileID: 1102798683}
   - component: {fileID: 1102798682}
+  - component: {fileID: 1102798685}
   m_Layer: 0
   m_Name: Hoop (4)
   m_TagString: Untagged
@@ -1900,6 +1929,19 @@ Transform:
   - {fileID: 2052130523}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -35.788, z: 0}
+--- !u!114 &1102798685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1102798681}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3561e3e1380677a4086d4d84d657d4b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  surfaceType: 1
 --- !u!1 &1156276424
 GameObject:
   m_ObjectHideFlags: 0
@@ -2180,13 +2222,39 @@ MonoBehaviour:
   targetCamera: {fileID: 0}
   markerPrefab: {fileID: 0}
   markerMaterial: {fileID: 2100000, guid: b386ba266dd8b5443bb1d84cab4e9b8f, type: 2}
-  markerSize: 0.25
+  markerSize: 0.2
   steps: 30
-  timeStep: 0.08
+  timeStep: 0.05
   collisionMask:
     serializedVersion: 2
     m_Bits: 0
   stopOnCollision: 1
+  startAlpha: 0.9
+  endAlpha: 0.05
+  alphaCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!4 &1252096858
 Transform:
   m_ObjectHideFlags: 0
@@ -2811,6 +2879,7 @@ GameObject:
   - component: {fileID: 1465997396}
   - component: {fileID: 1465997395}
   - component: {fileID: 1465997394}
+  - component: {fileID: 1465997397}
   m_Layer: 0
   m_Name: Hoop
   m_TagString: Untagged
@@ -2894,6 +2963,19 @@ Transform:
   - {fileID: 1185765352}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1465997397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1465997393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3561e3e1380677a4086d4d84d657d4b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  surfaceType: 1
 --- !u!1 &1584718008
 GameObject:
   m_ObjectHideFlags: 0
@@ -2967,6 +3049,7 @@ GameObject:
   - component: {fileID: 1623501251}
   - component: {fileID: 1623501250}
   - component: {fileID: 1623501249}
+  - component: {fileID: 1623501252}
   m_Layer: 0
   m_Name: Hoop (3)
   m_TagString: Untagged
@@ -3050,6 +3133,19 @@ Transform:
   - {fileID: 582835132}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: -35.788, z: 0}
+--- !u!114 &1623501252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623501248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3561e3e1380677a4086d4d84d657d4b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  surfaceType: 1
 --- !u!1 &1663811209
 GameObject:
   m_ObjectHideFlags: 0
