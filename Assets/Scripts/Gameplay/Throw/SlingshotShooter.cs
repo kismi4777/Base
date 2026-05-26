@@ -29,6 +29,7 @@ public class SlingshotShooter : MonoBehaviour
 
     [Header("Связи")]
     [SerializeField] TrajectoryPredictor trajectory;
+    [SerializeField] BallFlightSpeedController flightSpeedController;
 
     Rigidbody _rb;
     Vector2 _startScreenPos;
@@ -47,6 +48,8 @@ public class SlingshotShooter : MonoBehaviour
 
         if (trajectory == null)
             trajectory = GetComponentInChildren<TrajectoryPredictor>();
+        if (flightSpeedController == null)
+            flightSpeedController = GetComponent<BallFlightSpeedController>();
     }
 
     void Update()
@@ -168,6 +171,7 @@ public class SlingshotShooter : MonoBehaviour
         ApplyBackspin(force);
 
         Vector3 launchVelocity = force / Mathf.Max(_rb.mass, 0.001f);
+        flightSpeedController?.BeginControl(launchVelocity);
         NotifyHoopMagnets(launchVelocity);
     }
 
@@ -199,6 +203,7 @@ public class SlingshotShooter : MonoBehaviour
         _rb.isKinematic = true;
         transform.position = _initialPosition;
         transform.rotation = _initialRotation;
+        flightSpeedController?.CancelControl();
 
         trajectory?.HideTrajectory();
 

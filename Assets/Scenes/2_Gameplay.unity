@@ -197,6 +197,7 @@ GameObject:
   - component: {fileID: 98363371}
   - component: {fileID: 98363370}
   - component: {fileID: 98363372}
+  - component: {fileID: 98363373}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Untagged
@@ -213,7 +214,7 @@ Rigidbody:
   m_GameObject: {fileID: 98363364}
   serializedVersion: 4
   m_Mass: 0.6
-  m_Drag: 0.12
+  m_Drag: 0.01
   m_AngularDrag: 0.45
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
@@ -329,7 +330,7 @@ LineRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 98363364}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -450,6 +451,7 @@ MonoBehaviour:
   minForwardFraction: 0.2
   backspinTorque: 0.68
   trajectory: {fileID: 1252096856}
+  flightSpeedController: {fileID: 98363373}
 --- !u!114 &98363372
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -463,6 +465,48 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: cc0e63f99283f60498bcd7892a8c5de6, type: 2}
+--- !u!114 &98363373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 98363364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb03ef85501d8bb4e9995a88d9ce5ab7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useSpeedControl: 1
+  baseSpeedMultiplier: 1.5
+  speedOverFlight:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  slowDownAtApex: 1
+  apexSpeedDrop: 0.35
+  apexWindowNormalized: 0.2
+  minApexSpeedFactor: 0.1
 --- !u!1 &129522596
 GameObject:
   m_ObjectHideFlags: 0
@@ -599,6 +643,7 @@ GameObject:
   - component: {fileID: 294495314}
   - component: {fileID: 294495313}
   - component: {fileID: 294495316}
+  - component: {fileID: 294495317}
   m_Layer: 0
   m_Name: Hoop (1)
   m_TagString: Untagged
@@ -695,6 +740,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   surfaceType: 1
+--- !u!114 &294495317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 294495312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05da531167eebda41a531224eefc13c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetBall: {fileID: 98363365}
+  hoopAnchor: {fileID: 294495315}
+  centerOffset: {x: 0, y: 0, z: 0}
+  assistChance: 1
+  velocityBlend: 1
+  minHorizontalMiss: 0.05
+  maxHorizontalMiss: 0.55
+  maxPlaneMiss: 0.35
+  drawGizmos: 1
 --- !u!1 &304797454
 GameObject:
   m_ObjectHideFlags: 0
@@ -1810,7 +1876,7 @@ MonoBehaviour:
   markerPrefab: {fileID: 0}
   markerMaterial: {fileID: 2100000, guid: b386ba266dd8b5443bb1d84cab4e9b8f, type: 2}
   markerSize: 0.2
-  steps: 250
+  steps: 50
   timeStep: 0.05
   collisionMask:
     serializedVersion: 2
@@ -2407,7 +2473,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetBall: {fileID: 98363365}
-  hoopAnchor: {fileID: 0}
+  hoopAnchor: {fileID: 1465997396}
   centerOffset: {x: 0, y: -0.15, z: 0}
   assistChance: 1
   velocityBlend: 1
@@ -2489,6 +2555,7 @@ GameObject:
   - component: {fileID: 1623501250}
   - component: {fileID: 1623501249}
   - component: {fileID: 1623501252}
+  - component: {fileID: 1623501253}
   m_Layer: 0
   m_Name: Hoop (3)
   m_TagString: Untagged
@@ -2585,6 +2652,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   surfaceType: 1
+--- !u!114 &1623501253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623501248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05da531167eebda41a531224eefc13c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetBall: {fileID: 98363365}
+  hoopAnchor: {fileID: 1623501251}
+  centerOffset: {x: 0, y: 0, z: 0}
+  assistChance: 1
+  velocityBlend: 1
+  minHorizontalMiss: 0.05
+  maxHorizontalMiss: 0.55
+  maxPlaneMiss: 0.35
+  drawGizmos: 1
 --- !u!1 &1663811209
 GameObject:
   m_ObjectHideFlags: 0

@@ -17,7 +17,7 @@ MonoBehaviour:
   rimRestitution: 0.58
   backboardRestitution: 0.42
   defaultRestitution: 0.6
-  airDrag: 0.12
+  airDrag: 0.01
   angularDrag: 0.45
   energyRetentionPerHit: 0.96
   minImpactSpeed: 0.4
