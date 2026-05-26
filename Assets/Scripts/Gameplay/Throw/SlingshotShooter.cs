@@ -20,6 +20,8 @@ public class SlingshotShooter : MonoBehaviour
     [Range(20f, 85f)] public float maxLaunchElevationDeg = 64f;
     [Tooltip("Доп. подъём вверх на единицу импульса вперёд (высота пика дуги на дальних бросках)")]
     [Min(0f)] public float arcHeightPerForward = 0.32f;
+    [Tooltip("Общая «высота» дуги: умножает только вертикальную силу (горизонталь без изменений). >1 — круче баскетбольная дуга, <1 — площе.")]
+    [Range(0.35f, 2.5f)] public float arcLoftMultiplier = 1f;
     [Tooltip("Минимальная доля «вперёд» при боковом натяжении")]
     [Range(0.05f, 0.6f)] public float minForwardFraction = 0.2f;
     [Tooltip("Сила обратного закрута (backspin) при броске")]
@@ -137,9 +139,12 @@ public class SlingshotShooter : MonoBehaviour
         float forwardWeight = Mathf.Max(pullDir.y, minForwardFraction);
         Vector2 xzDirection = new Vector2(pullDir.x, forwardWeight).normalized;
 
+        float verticalForce =
+            (verticalImpulse + horizontalImpulse * xzDirection.y * arcHeightPerForward) * arcLoftMultiplier;
+
         Vector3 force = new(
             xzDirection.x * horizontalImpulse,
-            verticalImpulse + horizontalImpulse * xzDirection.y * arcHeightPerForward,
+            verticalForce,
             xzDirection.y * horizontalImpulse);
 
         if (force.z < 0f)
