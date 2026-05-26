@@ -26,6 +26,11 @@ public class SlingshotShooter : MonoBehaviour
     [Range(0.05f, 0.6f)] public float minForwardFraction = 0.2f;
     [Tooltip("Сила обратного закрута (backspin) при броске")]
     public float backspinTorque = 3f;
+    [Header("Визуальная оттяжка")]
+    [Tooltip("Максимальное визуальное смещение мяча назад во время прицеливания")]
+    [Range(0f, 0.6f)] public float maxAimPullback = 0.14f;
+    [Tooltip("Скорость сглаживания визуальной оттяжки")]
+    [Range(1f, 30f)] public float aimPullbackLerpSpeed = 14f;
 
     [Header("Связи")]
     [SerializeField] TrajectoryPredictor trajectory;
@@ -97,6 +102,7 @@ public class SlingshotShooter : MonoBehaviour
         }
 
         _currentScreenPos = screenPos;
+        UpdateAimVisualPullback();
 
         Vector3 forceVector = CalculateShootForce();
         Vector3 plannedVelocity = forceVector / Mathf.Max(_rb.mass, 0.001f);
@@ -162,7 +168,10 @@ public class SlingshotShooter : MonoBehaviour
     {
         Vector3 force = CalculateShootForce();
         if (force == Vector3.zero)
+        {
+            transform.position = _initialPosition;
             return;
+        }
 
         _rb.isKinematic = false;
         _rb.linearVelocity = Vector3.zero;
@@ -222,6 +231,40 @@ public class SlingshotShooter : MonoBehaviour
         HoopNetReaction[] netReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
         for (int i = 0; i < netReactions.Length; i++)
             netReactions[i].ResetShot();
+    }
+
+    void UpdateAimVisualPullback()
+    {
+        Vector3 targetPosition = _initialPosition;
+
+        if (TryCalculateAimVisualTargetPosition(out Vector3 pulledPosition))
+            targetPosition = pulledPosition;
+
+        float lerpT = 1f - Mathf.Exp(-aimPullbackLerpSpeed * Time.deltaTime);
+        transform.position = Vector3.Lerp(transform.position, targetPosition, lerpT);
+    }
+
+    bool TryCalculateAimVisualTargetPosition(out Vector3 targetPosition)
+    {
+        targetPosition = _initialPosition;
+
+        Vector2 pullVector = (_startScreenPos - _currentScreenPos) / Screen.height;
+        pullVector = Vector2.ClampMagnitude(pullVector, maxPullDistance);
+        float pullMagnitude = pullVector.magnitude;
+        if (pullMagnitude < 0.0001f)
+            return false;
+
+        Vector2 pullDir = pullVector / pullMagnitude;
+        float forwardWeight = Mathf.Max(pullDir.y, minForwardFraction);
+        Vector2 xzDirection = new Vector2(pullDir.x, forwardWeight).normalized;
+        Vector3 launchDirection = new Vector3(xzDirection.x, 0f, xzDirection.y);
+        if (launchDirection.sqrMagnitude < 0.0001f)
+            return false;
+
+        float normalizedPower = Mathf.Clamp01(pullMagnitude / Mathf.Max(maxPullDistance, 0.001f));
+        float visualPullback = normalizedPower * maxAimPullback;
+        targetPosition = _initialPosition - launchDirection * visualPullback;
+        return true;
     }
 
     static bool IsOutsideScreen(Vector2 screenPos) =>
