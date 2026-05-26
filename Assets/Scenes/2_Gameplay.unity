@@ -504,8 +504,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   powerMultiplier: 20
   maxPullDistance: 0.5
-  upwardAngle: 1.5
   minPullMagnitude: 0.02
+  minLaunchElevationDeg: 40
+  maxLaunchElevationDeg: 70
+  arcHeightPerForward: 0.35
+  minForwardFraction: 0.2
+  backspinTorque: 0.68
   trajectory: {fileID: 1252096856}
 --- !u!114 &98363372
 MonoBehaviour:

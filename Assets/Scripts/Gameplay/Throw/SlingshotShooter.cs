@@ -11,9 +11,17 @@ public class SlingshotShooter : MonoBehaviour
     [Header("Настройки броска")]
     public float powerMultiplier = 20f;
     public float maxPullDistance = 0.5f;
-    public float upwardAngle = 1.5f;
     [Tooltip("Минимальная длина натяжения (нормализованная к высоте экрана)")]
     public float minPullMagnitude = 0.02f;
+    [Header("Дуга броска")]
+    [Tooltip("Угол взлёта при слабом натяжении (градусы)")]
+    [Range(20f, 80f)] public float minLaunchElevationDeg = 38f;
+    [Tooltip("Угол взлёта при полном натяжении — чем выше, тем круче дуга")]
+    [Range(20f, 85f)] public float maxLaunchElevationDeg = 64f;
+    [Tooltip("Доп. подъём вверх на единицу импульса вперёд (высота пика дуги на дальних бросках)")]
+    [Min(0f)] public float arcHeightPerForward = 0.32f;
+    [Tooltip("Минимальная доля «вперёд» при боковом натяжении")]
+    [Range(0.05f, 0.6f)] public float minForwardFraction = 0.2f;
     [Tooltip("Сила обратного закрута (backspin) при броске")]
     public float backspinTorque = 3f;
 
@@ -113,13 +121,26 @@ public class SlingshotShooter : MonoBehaviour
         Vector2 pullVector = (_startScreenPos - _currentScreenPos) / Screen.height;
         pullVector = Vector2.ClampMagnitude(pullVector, maxPullDistance);
 
-        if (pullVector.magnitude < minPullMagnitude)
+        float pullMagnitude = pullVector.magnitude;
+        if (pullMagnitude < minPullMagnitude)
             return Vector3.zero;
 
+        // Сила броска — от полной длины натяжения, а не только вертикали экрана.
+        float normalizedPower = pullMagnitude / Mathf.Max(maxPullDistance, 0.001f);
+        float elevationRad = Mathf.Lerp(minLaunchElevationDeg, maxLaunchElevationDeg, normalizedPower) * Mathf.Deg2Rad;
+        float totalImpulse = pullMagnitude * powerMultiplier;
+
+        float horizontalImpulse = totalImpulse * Mathf.Cos(elevationRad);
+        float verticalImpulse = totalImpulse * Mathf.Sin(elevationRad);
+
+        Vector2 pullDir = pullVector / pullMagnitude;
+        float forwardWeight = Mathf.Max(pullDir.y, minForwardFraction);
+        Vector2 xzDirection = new Vector2(pullDir.x, forwardWeight).normalized;
+
         Vector3 force = new(
-            pullVector.x * powerMultiplier,
-            pullVector.y * powerMultiplier * upwardAngle,
-            pullVector.y * powerMultiplier);
+            xzDirection.x * horizontalImpulse,
+            verticalImpulse + horizontalImpulse * xzDirection.y * arcHeightPerForward,
+            xzDirection.y * horizontalImpulse);
 
         if (force.z < 0f)
             force.z = 0f;
