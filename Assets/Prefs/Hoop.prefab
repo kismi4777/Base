@@ -775,6 +775,13 @@ MonoBehaviour:
   damping: 5.5
   maxAnimDuration: 0.65
   maxSpeedForFullImpact: 14
+  rimHitImpactScale: 0.5
+  rimMinImpactSpeed: 0
+  rimHitCooldown: 0.015
+  rimMinRadius: 0
+  rimMaxRadius: 1.25
+  excludedRimHitRoots:
+  - {fileID: 5901852584014929695}
 --- !u!1 &4641102582685426091
 GameObject:
   m_ObjectHideFlags: 0
@@ -784,6 +791,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 901931077318345963}
+  - component: {fileID: 998374619365412305}
   m_Layer: 0
   m_Name: Ring_collider (1)
   m_TagString: Untagged
@@ -814,6 +822,19 @@ Transform:
   - {fileID: 7629027467538581060}
   m_Father: {fileID: 805505099040082558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &998374619365412305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4641102582685426091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3561e3e1380677a4086d4d84d657d4b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  surfaceType: 1
 --- !u!1 &5120416417303166825
 GameObject:
   m_ObjectHideFlags: 0

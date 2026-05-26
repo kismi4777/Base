@@ -12,6 +12,7 @@ public class BallBouncePhysics : MonoBehaviour
 
     Rigidbody _rb;
     Collider _collider;
+    HoopNetReaction[] _hoopNetReactions;
 
     public event Action<float, Vector3> Impact;
 
@@ -19,6 +20,7 @@ public class BallBouncePhysics : MonoBehaviour
     {
         _rb = GetComponent<Rigidbody>();
         _collider = GetComponent<Collider>();
+        CacheHoopNetReactions();
         ApplyRigidbodySettings();
         ApplyPhysicMaterial();
     }
@@ -56,12 +58,20 @@ public class BallBouncePhysics : MonoBehaviour
         if (settings == null || _rb.isKinematic)
             return;
 
+        if (collision.contactCount <= 0)
+            return;
+
         float impactSpeed = collision.relativeVelocity.magnitude;
+        ContactPoint contact = collision.GetContact(0);
+        Collider otherCollider = collision.collider;
+
+        // Реакцию сетки от кольца запускаем при любом касании, даже очень мягком.
+        NotifyRimHit(otherCollider, contact.point, collision.relativeVelocity, impactSpeed);
+
         if (impactSpeed < settings.minImpactSpeed)
             return;
 
-        ContactPoint contact = collision.GetContact(0);
-        ApplyBounce(contact.normal, collision.collider);
+        ApplyBounce(contact.normal, otherCollider);
         ApplyImpactSpin(contact.normal, collision.relativeVelocity);
         DampMicroMotion();
 
@@ -141,5 +151,35 @@ public class BallBouncePhysics : MonoBehaviour
         settings = newSettings;
         ApplyRigidbodySettings();
         ApplyPhysicMaterial();
+    }
+
+    void NotifyRimHit(Collider otherCollider, Vector3 impactPoint, Vector3 relativeVelocity, float impactSpeed)
+    {
+        if (otherCollider == null)
+            return;
+
+        BounceSurface surface = otherCollider.GetComponentInParent<BounceSurface>();
+        bool isRim = surface != null && surface.surfaceType == BounceSurfaceType.Rim;
+        if (!isRim)
+        {
+            // Фолбэк: некоторые коллайдеры кольца могут не иметь корректного маркера поверхности.
+            string colliderName = otherCollider.name;
+            string parentName = otherCollider.transform.parent != null ? otherCollider.transform.parent.name : string.Empty;
+            isRim = colliderName.Contains("Ring") || parentName.Contains("Ring");
+        }
+
+        if (!isRim)
+            return;
+
+        if (_hoopNetReactions == null || _hoopNetReactions.Length == 0)
+            CacheHoopNetReactions();
+
+        for (int i = 0; i < _hoopNetReactions.Length; i++)
+            _hoopNetReactions[i].OnRimHit(otherCollider, impactPoint, relativeVelocity, impactSpeed);
+    }
+
+    void CacheHoopNetReactions()
+    {
+        _hoopNetReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
     }
 }

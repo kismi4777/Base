@@ -27,10 +27,20 @@ public class HoopNetReaction : MonoBehaviour
     [SerializeField] float maxAnimDuration = 0.65f;
     [SerializeField] float maxSpeedForFullImpact = 14f;
 
+    [Header("Лёгкая реакция от касания кольца")]
+    [SerializeField] float rimHitImpactScale = 0.5f;
+    [SerializeField] float rimMinImpactSpeed = 0f;
+    [SerializeField] float rimHitCooldown = 0.015f;
+    [SerializeField] float rimMinRadius = 0f;
+    [SerializeField] float rimMaxRadius = 1.25f;
+    [Tooltip("Попадания по этим объектам не вызывают тряску сетки.")]
+    [SerializeField] Transform[] excludedRimHitRoots;
+
     Rigidbody _ball;
     Vector3 _previousBallPosition;
     bool _hasPreviousBallPosition;
     float _lastTriggerTime = -10f;
+    float _lastRimTriggerTime = -10f;
 
     Transform _visualParent;
     Vector3 _baseLocalPosition;
@@ -129,6 +139,61 @@ public class HoopNetReaction : MonoBehaviour
         StopAnimation();
     }
 
+    public void OnRimHit(Collider hitCollider, Vector3 impactPoint, Vector3 relativeVelocity, float impactSpeed)
+    {
+        if (Time.time - _lastRimTriggerTime < rimHitCooldown)
+            return;
+
+        if (impactSpeed < rimMinImpactSpeed)
+            return;
+
+        if (IsExcludedRimHit(hitCollider))
+            return;
+
+        Vector3 center = GetHoopCenter();
+        float distanceToCenter = HorizontalDistance(impactPoint, center);
+        bool hasRadiusLimits = rimMaxRadius > rimMinRadius + 0.0001f;
+        if (hasRadiusLimits && (distanceToCenter < rimMinRadius || distanceToCenter > rimMaxRadius))
+            return;
+
+        Vector3 horizontalVelocity = Vector3.ProjectOnPlane(relativeVelocity, Vector3.up);
+        Vector2 sway;
+        if (horizontalVelocity.sqrMagnitude > 0.0001f)
+        {
+            sway = new Vector2(horizontalVelocity.x, horizontalVelocity.z).normalized;
+        }
+        else
+        {
+            Vector3 fromCenter = impactPoint - center;
+            Vector2 fromCenter2D = new(fromCenter.x, fromCenter.z);
+            sway = fromCenter2D.sqrMagnitude > 0.0001f ? fromCenter2D.normalized : Vector2.right;
+        }
+
+        float normalizedImpact = Mathf.Clamp01(impactSpeed / Mathf.Max(0.001f, maxSpeedForFullImpact));
+        float rimImpact = Mathf.Lerp(0.18f, 0.55f, normalizedImpact) * rimHitImpactScale;
+        StartAnimation(rimImpact, sway, true);
+        _lastRimTriggerTime = Time.time;
+    }
+
+    bool IsExcludedRimHit(Collider hitCollider)
+    {
+        if (hitCollider == null || excludedRimHitRoots == null || excludedRimHitRoots.Length == 0)
+            return false;
+
+        Transform current = hitCollider.transform;
+        for (int i = 0; i < excludedRimHitRoots.Length; i++)
+        {
+            Transform excludedRoot = excludedRimHitRoots[i];
+            if (excludedRoot == null)
+                continue;
+
+            if (current == excludedRoot || current.IsChildOf(excludedRoot))
+                return true;
+        }
+
+        return false;
+    }
+
     void TryReactOnCrossing(Vector3 previousPosition, Vector3 currentPosition, Vector3 currentVelocity)
     {
         if (Time.time - _lastTriggerTime < retriggerCooldown)
@@ -163,14 +228,25 @@ public class HoopNetReaction : MonoBehaviour
 
         float speed = currentVelocity.magnitude;
         float normalizedImpact = Mathf.Clamp01(speed / Mathf.Max(0.001f, maxSpeedForFullImpact));
-        StartAnimation(Mathf.Lerp(0.45f, 1f, normalizedImpact), sway);
+        StartAnimation(Mathf.Lerp(0.45f, 1f, normalizedImpact), sway, false);
         _lastTriggerTime = Time.time;
     }
 
-    void StartAnimation(float impact, Vector2 swayDirection)
+    void StartAnimation(float impact, Vector2 swayDirection, bool additive)
     {
-        _impact = Mathf.Clamp01(impact);
-        _swayDirection = swayDirection.sqrMagnitude > 0f ? swayDirection.normalized : Vector2.right;
+        float clampedImpact = Mathf.Clamp01(impact);
+        Vector2 normalizedDirection = swayDirection.sqrMagnitude > 0f ? swayDirection.normalized : Vector2.right;
+
+        if (additive && _isAnimating)
+        {
+            _impact = Mathf.Clamp01(_impact + clampedImpact * 0.5f);
+            _swayDirection = Vector2.Lerp(_swayDirection, normalizedDirection, 0.35f).normalized;
+            _animTime *= 0.35f;
+            return;
+        }
+
+        _impact = clampedImpact;
+        _swayDirection = normalizedDirection;
         _animTime = 0f;
         _isAnimating = true;
     }
