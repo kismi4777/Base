@@ -157,8 +157,20 @@ public class SlingshotShooter : MonoBehaviour
             return;
 
         _rb.isKinematic = false;
+        _rb.linearVelocity = Vector3.zero;
+        _rb.angularVelocity = Vector3.zero;
         _rb.AddForce(force, ForceMode.Impulse);
         ApplyBackspin(force);
+
+        Vector3 launchVelocity = force / Mathf.Max(_rb.mass, 0.001f);
+        NotifyHoopMagnets(launchVelocity);
+    }
+
+    void NotifyHoopMagnets(Vector3 launchVelocity)
+    {
+        HoopRimMagnet[] magnets = FindObjectsByType<HoopRimMagnet>(FindObjectsSortMode.None);
+        for (int i = 0; i < magnets.Length; i++)
+            magnets[i].OnBallLaunched(_rb, launchVelocity);
     }
 
     void ApplyBackspin(Vector3 throwForce)
@@ -184,6 +196,10 @@ public class SlingshotShooter : MonoBehaviour
         transform.rotation = _initialRotation;
 
         trajectory?.HideTrajectory();
+
+        HoopRimMagnet[] magnets = FindObjectsByType<HoopRimMagnet>(FindObjectsSortMode.None);
+        for (int i = 0; i < magnets.Length; i++)
+            magnets[i].ResetShot();
     }
 
     static bool IsOutsideScreen(Vector2 screenPos) =>
