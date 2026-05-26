@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -39,25 +40,34 @@ public class SlingshotShooter : MonoBehaviour
     [SerializeField] TrajectoryPredictor trajectory;
     [SerializeField] BallFlightSpeedController flightSpeedController;
 
+    public event Action<SlingshotShooter> OnThrown;
+
     Rigidbody _rb;
     Vector2 _startScreenPos;
     Vector2 _currentScreenPos;
     bool _isAiming;
+    bool _throwConsumed;
     int _activePointerId = -1;
     Vector3 _initialPosition;
     Quaternion _initialRotation;
 
-    void Start()
+    void Awake()
     {
         _rb = GetComponent<Rigidbody>();
-        _rb.isKinematic = true;
-        _initialPosition = transform.position;
-        _initialRotation = transform.rotation;
 
         if (trajectory == null)
             trajectory = GetComponentInChildren<TrajectoryPredictor>();
         if (flightSpeedController == null)
             flightSpeedController = GetComponent<BallFlightSpeedController>();
+    }
+
+    void Start()
+    {
+        _initialPosition = transform.position;
+        _initialRotation = transform.rotation;
+
+        if (_rb != null)
+            _rb.isKinematic = true;
     }
 
     void LateUpdate()
@@ -74,6 +84,9 @@ public class SlingshotShooter : MonoBehaviour
 
     bool TryBeginAim()
     {
+        if (_throwConsumed)
+            return false;
+
         if (_isAiming)
             return false;
 
@@ -175,6 +188,9 @@ public class SlingshotShooter : MonoBehaviour
 
     void Shoot()
     {
+        if (!EnsureInitialized())
+            return;
+
         Vector3 force = CalculateShootForce();
         if (force == Vector3.zero)
         {
@@ -192,6 +208,9 @@ public class SlingshotShooter : MonoBehaviour
         flightSpeedController?.BeginControl(launchVelocity);
         NotifyHoopMagnets(launchVelocity);
         NotifyHoopNetReactions();
+
+        _throwConsumed = true;
+        OnThrown?.Invoke(this);
     }
 
     void NotifyHoopMagnets(Vector3 launchVelocity)
@@ -219,20 +238,78 @@ public class SlingshotShooter : MonoBehaviour
         _rb.AddTorque(-spinAxis * backspinTorque, ForceMode.Impulse);
     }
 
+    public void PrepareForThrow()
+    {
+        EnsureInitialized();
+        _initialPosition = transform.position;
+        _initialRotation = transform.rotation;
+        _throwConsumed = false;
+        ResetBall();
+    }
+
+    public void CleanupBeforeDespawn()
+    {
+        if (!EnsureInitialized())
+            return;
+
+        _isAiming = false;
+        _activePointerId = -1;
+        _throwConsumed = true;
+
+        flightSpeedController?.CancelControl();
+        StopRigidbodyMotion();
+        _rb.isKinematic = true;
+        trajectory?.HideTrajectory();
+        ResetHoopAssistState();
+    }
+
     public void ResetBall()
     {
+        if (!EnsureInitialized())
+            return;
+
+        _throwConsumed = false;
         _isAiming = false;
         _activePointerId = -1;
 
-        _rb.linearVelocity = Vector3.zero;
-        _rb.angularVelocity = Vector3.zero;
+        flightSpeedController?.CancelControl();
+        StopRigidbodyMotion();
         _rb.isKinematic = true;
         transform.position = _initialPosition;
         transform.rotation = _initialRotation;
-        flightSpeedController?.CancelControl();
 
         trajectory?.HideTrajectory();
+        ResetHoopAssistState();
+    }
 
+    void StopRigidbodyMotion()
+    {
+        if (_rb == null || _rb.isKinematic)
+            return;
+
+        _rb.linearVelocity = Vector3.zero;
+        _rb.angularVelocity = Vector3.zero;
+    }
+
+    bool EnsureInitialized()
+    {
+        if (_rb != null)
+            return true;
+
+        _rb = GetComponent<Rigidbody>();
+        if (_rb == null)
+            return false;
+
+        if (trajectory == null)
+            trajectory = GetComponentInChildren<TrajectoryPredictor>();
+        if (flightSpeedController == null)
+            flightSpeedController = GetComponent<BallFlightSpeedController>();
+
+        return true;
+    }
+
+    void ResetHoopAssistState()
+    {
         HoopRimMagnet[] magnets = FindObjectsByType<HoopRimMagnet>(FindObjectsSortMode.None);
         for (int i = 0; i < magnets.Length; i++)
             magnets[i].ResetShot();

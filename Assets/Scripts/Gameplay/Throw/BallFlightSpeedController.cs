@@ -66,6 +66,12 @@ public class BallFlightSpeedController : MonoBehaviour
         if (!_isControllingFlight || _rb == null)
             return;
 
+        if (_rb.isKinematic)
+        {
+            CancelControl();
+            return;
+        }
+
         float speedFactor = Mathf.Max(ComputeSpeedFactor(), 0.01f);
         _virtualTime += Time.fixedDeltaTime * speedFactor;
 
