@@ -173,6 +173,7 @@ public class SlingshotShooter : MonoBehaviour
         Vector3 launchVelocity = force / Mathf.Max(_rb.mass, 0.001f);
         flightSpeedController?.BeginControl(launchVelocity);
         NotifyHoopMagnets(launchVelocity);
+        NotifyHoopNetReactions();
     }
 
     void NotifyHoopMagnets(Vector3 launchVelocity)
@@ -180,6 +181,13 @@ public class SlingshotShooter : MonoBehaviour
         HoopRimMagnet[] magnets = FindObjectsByType<HoopRimMagnet>(FindObjectsSortMode.None);
         for (int i = 0; i < magnets.Length; i++)
             magnets[i].OnBallLaunched(_rb, launchVelocity);
+    }
+
+    void NotifyHoopNetReactions()
+    {
+        HoopNetReaction[] netReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
+        for (int i = 0; i < netReactions.Length; i++)
+            netReactions[i].OnBallLaunched(_rb);
     }
 
     void ApplyBackspin(Vector3 throwForce)
@@ -210,6 +218,10 @@ public class SlingshotShooter : MonoBehaviour
         HoopRimMagnet[] magnets = FindObjectsByType<HoopRimMagnet>(FindObjectsSortMode.None);
         for (int i = 0; i < magnets.Length; i++)
             magnets[i].ResetShot();
+
+        HoopNetReaction[] netReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
+        for (int i = 0; i < netReactions.Length; i++)
+            netReactions[i].ResetShot();
     }
 
     static bool IsOutsideScreen(Vector2 screenPos) =>

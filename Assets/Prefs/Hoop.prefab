@@ -682,6 +682,7 @@ GameObject:
   - component: {fileID: 5954976091398684123}
   - component: {fileID: 4940057104633139340}
   - component: {fileID: 3098570221153781868}
+  - component: {fileID: 2169405275811906840}
   m_Layer: 0
   m_Name: Hoop
   m_TagString: Untagged
@@ -749,6 +750,31 @@ MonoBehaviour:
   maxHorizontalMiss: 0.65
   maxPlaneMiss: 0.35
   drawGizmos: 1
+--- !u!114 &2169405275811906840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4254358712377488439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2be9e8d665cc4cccb47367b62fca877e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetBall: {fileID: 0}
+  hoopAnchor: {fileID: 6366457973398849297}
+  netVisual: {fileID: 805505099040082558}
+  centerOffset: {x: 0, y: -0.15, z: 0}
+  triggerRadius: 0.26
+  minDownwardSpeed: 0.75
+  retriggerCooldown: 0.2
+  pullDownDistance: 0.2
+  swayDistance: 0.08
+  oscillationFrequency: 6
+  damping: 5.5
+  maxAnimDuration: 0.65
+  maxSpeedForFullImpact: 14
 --- !u!1 &4641102582685426091
 GameObject:
   m_ObjectHideFlags: 0
