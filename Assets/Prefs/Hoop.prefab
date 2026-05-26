@@ -744,7 +744,7 @@ MonoBehaviour:
   targetBall: {fileID: 0}
   hoopAnchor: {fileID: 6366457973398849297}
   centerOffset: {x: 0, y: -0.15, z: 0}
-  assistChance: 1
+  assistChance: 0.5
   velocityBlend: 1
   minHorizontalMiss: 0.04
   maxHorizontalMiss: 0.65

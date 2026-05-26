@@ -1096,6 +1096,14 @@ PrefabInstance:
       propertyPath: targetBall
       value: 
       objectReference: {fileID: 98363365}
+    - target: {fileID: 3098570221153781868, guid: d7b7632030e43e74e9a489a9e348aeea, type: 3}
+      propertyPath: assistChance
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3098570221153781868, guid: d7b7632030e43e74e9a489a9e348aeea, type: 3}
+      propertyPath: velocityBlend
+      value: 0.05
+      objectReference: {fileID: 0}
     - target: {fileID: 4254358712377488439, guid: d7b7632030e43e74e9a489a9e348aeea, type: 3}
       propertyPath: m_Name
       value: Hoop
