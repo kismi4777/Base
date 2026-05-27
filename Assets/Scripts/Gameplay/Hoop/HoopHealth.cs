@@ -9,6 +9,7 @@ using UnityEngine.UI;
 /// </summary>
 public class HoopHealth : MonoBehaviour
 {
+    public event Action<HoopHealth> Scored;
     public event Action<HoopHealth> HealthDepleted;
 
     [Header("Связи")]
@@ -114,9 +115,18 @@ public class HoopHealth : MonoBehaviour
     {
         _currentHealth = Mathf.Clamp(_currentHealth - damagePerScore, 0, maxHealth);
         UpdateBarOnDamage();
+        Scored?.Invoke(this);
 
         if (_currentHealth <= 0)
             OnHealthDepleted();
+    }
+
+    public void ResetForNewSpawn()
+    {
+        _currentHealth = Mathf.Max(1, maxHealth);
+        _enteredBallIds.Clear();
+        _lastScoreTime = -10f;
+        UpdateBarInstant();
     }
 
     void UpdateBarOnDamage()

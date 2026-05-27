@@ -3,20 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Спавнит кольцо в случайной точке из дочерних точек спавна.
-/// При уничтожении кольца (через HoopHealth) создаёт новое после задержки.
+/// Держит одно кольцо и переносит его в случайную точку спавна после каждого гола.
 /// </summary>
 public class HoopSpawner : MonoBehaviour
 {
     [Header("Настройки спавна")]
     [SerializeField] GameObject hoopPrefab;
-    [SerializeField] float respawnDelay = 1f;
+    [SerializeField] float relocateDelay = 0.35f;
     [SerializeField] bool randomizeOnStart = true;
     [SerializeField] bool removeExtraHoopsOnStart = true;
+    [SerializeField] bool avoidSameSpawnPoint = true;
 
     readonly List<Transform> _spawnPoints = new();
     GameObject _currentHoop;
-    Coroutine _respawnRoutine;
+    int _currentSpawnIndex = -1;
+    Coroutine _relocateRoutine;
 
     void Awake()
     {
@@ -36,9 +37,14 @@ public class HoopSpawner : MonoBehaviour
             return;
 
         if (randomizeOnStart)
-            MoveToRandomSpawnPoint(_currentHoop.transform);
+            PlaceHoopAtSpawnPoint(_currentHoop.transform, PickRandomSpawnIndex(-1));
 
         SubscribeToHoopHealth(_currentHoop);
+    }
+
+    void OnDestroy()
+    {
+        UnsubscribeFromHoopHealth(_currentHoop);
     }
 
     void CacheSpawnPoints()
@@ -69,64 +75,86 @@ public class HoopSpawner : MonoBehaviour
             return;
         }
 
-        SpawnNewHoop();
-    }
-
-    void SpawnNewHoop()
-    {
         if (hoopPrefab == null)
         {
             Debug.LogError("HoopSpawner: не назначен префаб кольца.", this);
             return;
         }
 
-        Transform spawnPoint = GetRandomSpawnPoint();
+        int spawnIndex = PickRandomSpawnIndex(-1);
+        Transform spawnPoint = _spawnPoints[spawnIndex];
         _currentHoop = Instantiate(hoopPrefab, spawnPoint.position, spawnPoint.rotation);
-        SubscribeToHoopHealth(_currentHoop);
-    }
-
-    Transform GetRandomSpawnPoint()
-    {
-        int index = Random.Range(0, _spawnPoints.Count);
-        return _spawnPoints[index];
-    }
-
-    void MoveToRandomSpawnPoint(Transform target)
-    {
-        Transform spawnPoint = GetRandomSpawnPoint();
-        target.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
+        _currentSpawnIndex = spawnIndex;
     }
 
     void SubscribeToHoopHealth(GameObject hoop)
     {
-        if (hoop == null)
-            return;
-
-        if (!hoop.TryGetComponent(out HoopHealth hoopHealth))
+        if (hoop == null || !hoop.TryGetComponent(out HoopHealth hoopHealth))
         {
             Debug.LogError("HoopSpawner: у кольца отсутствует компонент HoopHealth.", hoop);
             return;
         }
 
-        hoopHealth.HealthDepleted -= HandleHoopDepleted;
-        hoopHealth.HealthDepleted += HandleHoopDepleted;
+        hoopHealth.Scored -= HandleHoopScored;
+        hoopHealth.Scored += HandleHoopScored;
     }
 
-    void HandleHoopDepleted(HoopHealth depletedHoop)
+    void UnsubscribeFromHoopHealth(GameObject hoop)
     {
-        if (depletedHoop != null)
-            Destroy(depletedHoop.gameObject);
+        if (hoop == null || !hoop.TryGetComponent(out HoopHealth hoopHealth))
+            return;
 
-        if (_respawnRoutine != null)
-            StopCoroutine(_respawnRoutine);
-
-        _respawnRoutine = StartCoroutine(RespawnRoutine());
+        hoopHealth.Scored -= HandleHoopScored;
     }
 
-    IEnumerator RespawnRoutine()
+    void HandleHoopScored(HoopHealth hoopHealth)
     {
-        yield return new WaitForSeconds(respawnDelay);
-        _respawnRoutine = null;
-        SpawnNewHoop();
+        if (hoopHealth == null || _spawnPoints.Count == 0)
+            return;
+
+        if (_relocateRoutine != null)
+            StopCoroutine(_relocateRoutine);
+
+        _relocateRoutine = StartCoroutine(RelocateAfterScoreRoutine(hoopHealth));
+    }
+
+    IEnumerator RelocateAfterScoreRoutine(HoopHealth hoopHealth)
+    {
+        GameObject hoopObject = hoopHealth.gameObject;
+        hoopObject.SetActive(false);
+
+        yield return new WaitForSeconds(relocateDelay);
+
+        int nextIndex = PickRandomSpawnIndex(avoidSameSpawnPoint ? _currentSpawnIndex : -1);
+        PlaceHoopAtSpawnPoint(hoopObject.transform, nextIndex);
+
+        hoopHealth.ResetForNewSpawn();
+        if (hoopObject.TryGetComponent(out HoopNetReaction netReaction))
+            netReaction.ResetShot();
+
+        hoopObject.SetActive(true);
+        _relocateRoutine = null;
+    }
+
+    void PlaceHoopAtSpawnPoint(Transform hoopTransform, int spawnIndex)
+    {
+        Transform spawnPoint = _spawnPoints[spawnIndex];
+        hoopTransform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
+        _currentSpawnIndex = spawnIndex;
+    }
+
+    int PickRandomSpawnIndex(int excludedIndex)
+    {
+        if (_spawnPoints.Count == 1)
+            return 0;
+
+        if (!avoidSameSpawnPoint || excludedIndex < 0 || _spawnPoints.Count <= 1)
+            return Random.Range(0, _spawnPoints.Count);
+
+        int index = Random.Range(0, _spawnPoints.Count - 1);
+        if (index >= excludedIndex)
+            index++;
+
+        return index;
     }
 }
