@@ -45,7 +45,6 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
     [Tooltip("Вертикальный промах в метрах от точки Aim.")]
     [SerializeField] float missVerticalOffsetMin = -0.06f;
     [SerializeField] float missVerticalOffsetMax = 0.12f;
-    [SerializeField] float playerUnlockDelayAfterBotThrow = 1.15f;
     [Tooltip("Смещение точки прицеливания бота по Y относительно центра объекта кольца игрока.")]
     [SerializeField] float perfectAimTargetYOffset = -0.15f;
     [Tooltip("Высота пика траектории над центром кольца игрока для идеального броска.")]
@@ -63,14 +62,8 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
 
     BallSpawner _spawner;
     Coroutine _botThrowRoutine;
-    bool _nextTurnIsBot;
     bool _matchEnded;
     SlingshotShooter _ballSubscribedForThrown;
-
-    void Awake()
-    {
-        _nextTurnIsBot = false;
-    }
 
     void Start()
     {
@@ -201,42 +194,30 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
         _ballSubscribedForThrown = ball;
         ball.OnThrown += HandleBallThrown;
 
-        StopBotRoutineIfAny();
-
         if (_matchEnded)
         {
             ball.IsInputLocked = true;
             return;
         }
 
-        if (_nextTurnIsBot)
-        {
-            ball.IsInputLocked = true;
-            if (_botThrowRoutine == null)
-                _botThrowRoutine = StartCoroutine(BotThrowRoutine(ball));
-        }
-        else
-        {
-            ball.IsInputLocked = false;
-        }
+        // Игрок всегда может бросать сразу после появления его мяча.
+        ball.IsInputLocked = false;
     }
 
-    void HandleBallThrown(SlingshotShooter _)
+    void HandleBallThrown(SlingshotShooter thrownBall)
     {
-        _nextTurnIsBot = !_nextTurnIsBot;
+        if (_matchEnded || thrownBall == null)
+            return;
 
-        if (!_nextTurnIsBot || _matchEnded)
+        bool isBotThrow = botShooter != null && ReferenceEquals(thrownBall, botShooter);
+        if (isBotThrow)
             return;
 
         StopBotRoutineIfAny();
-        SlingshotShooter playerBall = _spawner != null ? _spawner.CurrentThrowableBall : null;
-        if (playerBall != null)
-            playerBall.IsInputLocked = true;
-
-        _botThrowRoutine = StartCoroutine(BotThrowRoutine(playerBall));
+        _botThrowRoutine = StartCoroutine(BotThrowRoutine());
     }
 
-    IEnumerator BotThrowRoutine(SlingshotShooter ball)
+    IEnumerator BotThrowRoutine()
     {
         float minDelay = Mathf.Min(botReactionDelayMinSeconds, botReactionDelayMaxSeconds);
         float maxDelay = Mathf.Max(botReactionDelayMinSeconds, botReactionDelayMaxSeconds);
@@ -250,8 +231,8 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
         SlingshotShooter shooter = ResolveBotShooterIfNeeded();
         if (shooter == null)
         {
-            // Фолбэк: если отдельный мяч бота не задан, используем текущий мяч (старое поведение).
-            shooter = ball;
+            _botThrowRoutine = null;
+            yield break;
         }
 
         shooter.IsInputLocked = true;
@@ -281,13 +262,11 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
             }
         }
         bool launched = shooter.TryLaunchScripted(force, PvPTeam.Bot);
+        if (!launched)
+            TryUnlockCurrentThrowableForPlayer();
 
         if (launched)
-            StartCoroutine(UnlockPlayerBallAfterDelayRoutine());
-        else if (ball != null)
-            ball.IsInputLocked = false;
-
-        _nextTurnIsBot = false;
+            TryUnlockCurrentThrowableForPlayer();
         _botThrowRoutine = null;
     }
 
@@ -308,13 +287,10 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
         _spawner.CurrentThrowableBall.IsInputLocked = true;
     }
 
-    IEnumerator UnlockPlayerBallAfterDelayRoutine()
+    void TryUnlockCurrentThrowableForPlayer()
     {
-        if (playerUnlockDelayAfterBotThrow > 0f)
-            yield return new WaitForSeconds(playerUnlockDelayAfterBotThrow);
-
         if (_matchEnded || _spawner == null || _spawner.CurrentThrowableBall == null)
-            yield break;
+            return;
 
         _spawner.CurrentThrowableBall.IsInputLocked = false;
     }
