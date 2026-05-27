@@ -2095,19 +2095,22 @@ MonoBehaviour:
   botDefendedHoop: {fileID: 0}
   autoResolveHoopsByTeam: 1
   botShooter: {fileID: 735273175}
+  botBallSpawnWorld: {x: -0.69, y: 2.13, z: -1.953}
+  botBallSpawnWorldRotation: {x: 0, y: 0, z: 0, w: 1}
   botAimTarget: {fileID: 0}
   preferAimChildInPlayerHoop: 1
   fallbackAimTargetPathInHoop: BUSKET2/Ring_collider
   botAccuracyPercent: 25
-  botAimDelaySeconds: 0.45
+  botReactionDelayMinSeconds: 1
+  botReactionDelayMaxSeconds: 1.8
   normalizedPullMin: 0.72
   normalizedPullMax: 0.95
-  missLateralOffsetMin: 0.75
-  missLateralOffsetMax: 0.75
-  missForwardOffsetMin: 0.75
-  missForwardOffsetMax: 0.75
-  missVerticalOffsetMin: 0.75
-  missVerticalOffsetMax: 0.75
+  missLateralOffsetMin: 0.5
+  missLateralOffsetMax: 0.5
+  missForwardOffsetMin: 0.5
+  missForwardOffsetMax: 0.5
+  missVerticalOffsetMin: 0.5
+  missVerticalOffsetMax: 0.5
   playerUnlockDelayAfterBotThrow: 1.15
   perfectAimTargetYOffset: -0.15
   perfectArcApexHeight: 2.8
@@ -2166,6 +2169,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ballPrefab: {fileID: 5170082398943817425, guid: 1608dc0f79f10604991b3e78cc546a77, type: 3}
   scenePlayerBall: {fileID: 2057033572}
+  playerBallSpawnWorld: {x: 0.69, y: 2.13, z: -1.953}
+  playerBallSpawnWorldRotation: {x: 0, y: 0, z: 0, w: 1}
   respawnDelay: 1
   prewarmCount: 2
 --- !u!4 &1415349595

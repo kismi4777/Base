@@ -30,7 +30,10 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
     [Tooltip("Вероятность 0–100: бросок по направлению на кольцо игрока; иначе — промах в сторону.")]
     [Range(0f, 100f)]
     [SerializeField] float botAccuracyPercent = 55f;
-    [SerializeField] float botAimDelaySeconds = 0.45f;
+    [Tooltip("Мин. секунд после броска игрока до броска бота (случайное время «когда захочет» в интервале с максимумом).")]
+    [SerializeField] float botReactionDelayMinSeconds = 1f;
+    [Tooltip("Макс. секунд после броска игрока до броска бота (вместе с минимумом задаёт окно).")]
+    [SerializeField] float botReactionDelayMaxSeconds = 1.8f;
     [SerializeField] float normalizedPullMin = 0.72f;
     [SerializeField] float normalizedPullMax = 0.95f;
     [Tooltip("Горизонтальный промах в метрах от точки Aim (влево/вправо по локальной оси кольца).")]
@@ -235,8 +238,11 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
 
     IEnumerator BotThrowRoutine(SlingshotShooter ball)
     {
-        if (botAimDelaySeconds > 0f)
-            yield return new WaitForSeconds(botAimDelaySeconds);
+        float minDelay = Mathf.Min(botReactionDelayMinSeconds, botReactionDelayMaxSeconds);
+        float maxDelay = Mathf.Max(botReactionDelayMinSeconds, botReactionDelayMaxSeconds);
+        float reactionDelay = maxDelay > minDelay ? UnityEngine.Random.Range(minDelay, maxDelay) : minDelay;
+        if (reactionDelay > 0f)
+            yield return new WaitForSeconds(reactionDelay);
 
         if (_matchEnded)
             yield break;
