@@ -61,6 +61,7 @@ public class HoopHealth : MonoBehaviour
     bool _relocateBusy;
 
     public bool IsRelocateBusy => _relocateBusy;
+    public int LastAppliedDamage { get; private set; }
 
     void Awake()
     {
@@ -127,6 +128,7 @@ public class HoopHealth : MonoBehaviour
 
     void ApplyDamage()
     {
+        LastAppliedDamage = damagePerScore;
         _currentHealth = Mathf.Clamp(_currentHealth - damagePerScore, 0, maxHealth);
         UpdateBarOnDamage();
         Scored?.Invoke(this);

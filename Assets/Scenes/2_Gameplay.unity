@@ -2111,7 +2111,6 @@ MonoBehaviour:
   missForwardOffsetMax: 0.5
   missVerticalOffsetMin: 0.5
   missVerticalOffsetMax: 0.5
-  playerUnlockDelayAfterBotThrow: 1.15
   perfectAimTargetYOffset: -0.15
   perfectArcApexHeight: 2.8
   perfectApexExtraPerMeter: 0.55
