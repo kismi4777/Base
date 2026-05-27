@@ -15,6 +15,10 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
     [SerializeField] bool autoResolveHoopsByTeam = true;
     [Tooltip("Отдельный мяч бота (Ball_Bot) с компонентом SlingshotShooter.")]
     [SerializeField] SlingshotShooter botShooter;
+    [Header("Точка спавна мяча бота (строго мировые координаты)")]
+    [Tooltip("Координаты с объекта Ball_Bot в сцене 2_Gameplay. Перед каждым броском бота мяч ставится только сюда.")]
+    [SerializeField] Vector3 botBallSpawnWorld = new Vector3(-0.69f, 2.13f, -1.953f);
+    [SerializeField] Quaternion botBallSpawnWorldRotation = Quaternion.identity;
     [Tooltip("Ручная цель бота (опционально). Если включено «приоритет Aim», объект Aim в кольце игрока перекрывает это поле.")]
     [SerializeField] Transform botAimTarget;
     [Tooltip("Если в кольце игрока есть дочерний объект с именем Aim — бот всегда целится в него (даже если в Bot Aim Target назначен Ring_collider и т.п.).")]
@@ -29,8 +33,15 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
     [SerializeField] float botAimDelaySeconds = 0.45f;
     [SerializeField] float normalizedPullMin = 0.72f;
     [SerializeField] float normalizedPullMax = 0.95f;
-    [SerializeField] float missYawDegreesMin = 18f;
-    [SerializeField] float missYawDegreesMax = 42f;
+    [Tooltip("Горизонтальный промах в метрах от точки Aim (влево/вправо по локальной оси кольца).")]
+    [SerializeField] float missLateralOffsetMin = 0.18f;
+    [SerializeField] float missLateralOffsetMax = 0.45f;
+    [Tooltip("Продольный промах в метрах от точки Aim (вперед/назад вдоль оси кольца).")]
+    [SerializeField] float missForwardOffsetMin = 0.05f;
+    [SerializeField] float missForwardOffsetMax = 0.22f;
+    [Tooltip("Вертикальный промах в метрах от точки Aim.")]
+    [SerializeField] float missVerticalOffsetMin = -0.06f;
+    [SerializeField] float missVerticalOffsetMax = 0.12f;
     [SerializeField] float playerUnlockDelayAfterBotThrow = 1.15f;
     [Tooltip("Смещение точки прицеливания бота по Y относительно центра объекта кольца игрока.")]
     [SerializeField] float perfectAimTargetYOffset = -0.15f;
@@ -69,6 +80,7 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
         }
 
         ResolveBotShooterIfNeeded();
+        SnapBotBallToFixedSpawn();
         _spawner.ThrowableBallReady += HandleThrowableBallReady;
         if (!TryResolveHoopsByTeamIfNeeded())
             StartCoroutine(WaitForHoopsRoutine());
@@ -237,6 +249,8 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
         }
 
         shooter.IsInputLocked = true;
+        if (botShooter != null && ReferenceEquals(shooter, botShooter))
+            SnapBotBallToFixedSpawn(shooter);
         shooter.PrepareForThrow();
 
         bool rollHit = UnityEngine.Random.Range(0f, 100f) < botAccuracyPercent;
@@ -249,17 +263,16 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
         }
         else
         {
-            Vector3 from = shooter.transform.position;
-            Vector3 planar = hoopPos - from;
-            planar.y = 0f;
-
-            float yawDeg = UnityEngine.Random.Range(missYawDegreesMin, missYawDegreesMax);
-            if (UnityEngine.Random.value < 0.5f)
-                yawDeg = -yawDeg;
-
-            planar = Quaternion.AngleAxis(yawDeg, Vector3.up) * planar;
-            float pull = UnityEngine.Random.Range(normalizedPullMin, normalizedPullMax);
-            force = shooter.ComputeThrowForceForPlanarDirection(planar, pull);
+            Vector3 missTarget = CalculateMissTargetPoint(hoopPos);
+            if (!TryCalculatePerfectThrowForce(shooter, missTarget, out force))
+            {
+                // Фолбэк на старую модель силы, если по какой-то причине баллистика не посчиталась.
+                Vector3 from = shooter.transform.position;
+                Vector3 planar = missTarget - from;
+                planar.y = 0f;
+                float pull = UnityEngine.Random.Range(normalizedPullMin, normalizedPullMax);
+                force = shooter.ComputeThrowForceForPlanarDirection(planar, pull);
+            }
         }
         bool launched = shooter.TryLaunchScripted(force, PvPTeam.Bot);
 
@@ -298,6 +311,18 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
             yield break;
 
         _spawner.CurrentThrowableBall.IsInputLocked = false;
+    }
+
+    /// <summary>
+    /// Ставит мяч бота строго в заданную мировую точку (перед PrepareForThrow и при старте сцены).
+    /// </summary>
+    void SnapBotBallToFixedSpawn(SlingshotShooter shooter = null)
+    {
+        SlingshotShooter target = shooter != null ? shooter : botShooter;
+        if (target == null)
+            return;
+
+        target.transform.SetPositionAndRotation(botBallSpawnWorld, botBallSpawnWorldRotation);
     }
 
     SlingshotShooter ResolveBotShooterIfNeeded()
@@ -372,6 +397,28 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
 
         force = launchVelocity * Mathf.Max(rb.mass, 0.001f);
         return true;
+    }
+
+    Vector3 CalculateMissTargetPoint(Vector3 baseTarget)
+    {
+        if (playerDefendedHoop == null)
+            return baseTarget;
+
+        Transform hoop = playerDefendedHoop.transform;
+        Vector3 lateralDir = hoop.right.sqrMagnitude > 0.0001f ? hoop.right.normalized : Vector3.right;
+        Vector3 forwardDir = hoop.forward.sqrMagnitude > 0.0001f ? hoop.forward.normalized : Vector3.forward;
+
+        float lateral = UnityEngine.Random.Range(missLateralOffsetMin, missLateralOffsetMax);
+        if (UnityEngine.Random.value < 0.5f)
+            lateral = -lateral;
+
+        float forward = UnityEngine.Random.Range(missForwardOffsetMin, missForwardOffsetMax);
+        if (UnityEngine.Random.value < 0.5f)
+            forward = -forward;
+
+        float vertical = UnityEngine.Random.Range(missVerticalOffsetMin, missVerticalOffsetMax);
+
+        return baseTarget + lateralDir * lateral + forwardDir * forward + Vector3.up * vertical;
     }
 
     Vector3 ResolveBotAimPoint()

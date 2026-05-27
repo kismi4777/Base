@@ -2096,15 +2096,22 @@ MonoBehaviour:
   autoResolveHoopsByTeam: 1
   botShooter: {fileID: 735273175}
   botAimTarget: {fileID: 0}
-  botAccuracyPercent: 100
+  preferAimChildInPlayerHoop: 1
+  fallbackAimTargetPathInHoop: BUSKET2/Ring_collider
+  botAccuracyPercent: 25
   botAimDelaySeconds: 0.45
   normalizedPullMin: 0.72
   normalizedPullMax: 0.95
-  missYawDegreesMin: 18
-  missYawDegreesMax: 42
+  missLateralOffsetMin: 0.75
+  missLateralOffsetMax: 0.75
+  missForwardOffsetMin: 0.75
+  missForwardOffsetMax: 0.75
+  missVerticalOffsetMin: 0.75
+  missVerticalOffsetMax: 0.75
   playerUnlockDelayAfterBotThrow: 1.15
   perfectAimTargetYOffset: -0.15
   perfectArcApexHeight: 2.8
+  perfectApexExtraPerMeter: 0.55
   perfectAimForwardOffset: 0.02
   perfectMaxUpVelocity: 14
   onPlayerWon:

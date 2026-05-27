@@ -7,11 +7,16 @@ using UnityEngine;
 /// Управляет появлением мячей: один активный для броска, пул для повторного использования.
 /// Новый мяч появляется через заданную задержку после броска предыдущего.
 /// </summary>
+[DefaultExecutionOrder(-20)]
 public class BallSpawner : MonoBehaviour
 {
     [SerializeField] SlingshotShooter ballPrefab;
     [Tooltip("Стартовый мяч игрока на сцене. Если задан, спавнер использует только его как исходную точку.")]
     [SerializeField] SlingshotShooter scenePlayerBall;
+    [Header("Точка спавна мяча игрока (строго мировые координаты)")]
+    [Tooltip("Координаты с объекта Ball в сцене 2_Gameplay. Респавн и пул используют только эту точку, а не позицию спавнера.")]
+    [SerializeField] Vector3 playerBallSpawnWorld = new Vector3(0.69f, 2.13f, -1.953f);
+    [SerializeField] Quaternion playerBallSpawnWorldRotation = Quaternion.identity;
     [SerializeField] float respawnDelay = 1f;
     [Tooltip("Сколько мячей подготовить в пуле заранее")]
     [Min(1)] [SerializeField] int prewarmCount = 2;
@@ -38,7 +43,9 @@ public class BallSpawner : MonoBehaviour
     void Awake()
     {
         Instance = this;
-        CacheSpawnPoseFromSceneBall();
+        _spawnPosition = playerBallSpawnWorld;
+        _spawnRotation = playerBallSpawnWorldRotation;
+        BindScenePlayerBallAtFixedSpawn();
     }
 
     void OnDestroy()
@@ -64,16 +71,18 @@ public class BallSpawner : MonoBehaviour
         SpawnThrowableBall();
     }
 
-    void CacheSpawnPoseFromSceneBall()
+    /// <summary>
+    /// Подхватывает мяч со сцены и ставит его строго в точку playerBallSpawnWorld.
+    /// </summary>
+    void BindScenePlayerBallAtFixedSpawn()
     {
         SlingshotShooter sceneBall = ResolveScenePlayerBall();
         if (sceneBall == null)
             return;
 
         Transform t = sceneBall.transform;
-        _spawnPosition = t.position;
-        _spawnRotation = t.rotation;
         _spawnParent = t.parent;
+        t.SetPositionAndRotation(_spawnPosition, _spawnRotation);
         _throwableBall = sceneBall;
     }
 
