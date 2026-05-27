@@ -1918,9 +1918,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hoopPrefab: {fileID: 4254358712377488439, guid: d7b7632030e43e74e9a489a9e348aeea, type: 3}
-  respawnDelay: 1
   randomizeOnStart: 1
   removeExtraHoopsOnStart: 1
+  avoidSameSpawnPoint: 1
+  playSpawnOnStart: 0
 --- !u!4 &1672279575
 Transform:
   m_ObjectHideFlags: 0
@@ -2814,23 +2815,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!1 &2057033559 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6566848033265396976, guid: 1608dc0f79f10604991b3e78cc546a77, type: 3}
-  m_PrefabInstance: {fileID: 1118103277518934259}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &2057033567
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2057033559}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aeb4c848aa70b2f4cb62f4d554906a9a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1118103277518934259
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2839,17 +2823,13 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2573234406675828081, guid: 1608dc0f79f10604991b3e78cc546a77, type: 3}
-      propertyPath: steps
-      value: 60
-      objectReference: {fileID: 0}
     - target: {fileID: 6566848033265396976, guid: 1608dc0f79f10604991b3e78cc546a77, type: 3}
       propertyPath: m_Name
       value: Ball
       objectReference: {fileID: 0}
     - target: {fileID: 8178552507825186855, guid: 1608dc0f79f10604991b3e78cc546a77, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.27
+      value: 0.69
       objectReference: {fileID: 0}
     - target: {fileID: 8178552507825186855, guid: 1608dc0f79f10604991b3e78cc546a77, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2890,10 +2870,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6566848033265396976, guid: 1608dc0f79f10604991b3e78cc546a77, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2057033567}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1608dc0f79f10604991b3e78cc546a77, type: 3}
 --- !u!33 &3991584104077201119
 MeshFilter:

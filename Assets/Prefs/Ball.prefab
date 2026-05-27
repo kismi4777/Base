@@ -183,6 +183,7 @@ GameObject:
   - component: {fileID: 5721241644699041005}
   - component: {fileID: 1476897535699978939}
   - component: {fileID: 4467691675062358116}
+  - component: {fileID: 3131333055829750399}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Untagged
@@ -451,6 +452,18 @@ MonoBehaviour:
   apexWindowNormalized: 0.2
   minApexSpeedFactor: 0.1
 --- !u!114 &4467691675062358116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6566848033265396976}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aeb4c848aa70b2f4cb62f4d554906a9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3131333055829750399
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

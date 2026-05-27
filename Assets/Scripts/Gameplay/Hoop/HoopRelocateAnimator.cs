@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Воспроизведение клипов death/spawn на Animator кольца.
+/// Воспроизведение клипов death/spawn. Позиция фиксируется вручную — в клипах зашиты старые координаты.
 /// </summary>
 [RequireComponent(typeof(Animator))]
 public class HoopRelocateAnimator : MonoBehaviour
@@ -20,17 +20,17 @@ public class HoopRelocateAnimator : MonoBehaviour
             animator = GetComponent<Animator>();
     }
 
-    public IEnumerator PlayDeathRoutine()
+    public IEnumerator PlayDeathRoutine(Vector3 pinWorldPosition)
     {
-        yield return PlayStateRoutine(DeathHash, "death", deathClipLength);
+        yield return PlayStateRoutine(DeathHash, deathClipLength, pinWorldPosition);
     }
 
-    public IEnumerator PlaySpawnRoutine()
+    public IEnumerator PlaySpawnRoutine(Vector3 pinWorldPosition)
     {
-        yield return PlayStateRoutine(SpawnHash, "spawn", spawnClipLength);
+        yield return PlayStateRoutine(SpawnHash, spawnClipLength, pinWorldPosition);
     }
 
-    IEnumerator PlayStateRoutine(int stateHash, string stateName, float fallbackLength)
+    IEnumerator PlayStateRoutine(int stateHash, float fallbackLength, Vector3 pinWorldPosition)
     {
         if (animator == null)
         {
@@ -38,6 +38,7 @@ public class HoopRelocateAnimator : MonoBehaviour
             yield break;
         }
 
+        PinWorldPosition(pinWorldPosition);
         animator.Play(stateHash, 0, 0f);
         yield return null;
 
@@ -46,12 +47,21 @@ public class HoopRelocateAnimator : MonoBehaviour
 
         while (elapsed < maxWait)
         {
+            PinWorldPosition(pinWorldPosition);
+
             AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
             if (info.shortNameHash == stateHash && info.normalizedTime >= 0.99f && !animator.IsInTransition(0))
-                yield break;
+                break;
 
             elapsed += Time.deltaTime;
             yield return null;
         }
+
+        PinWorldPosition(pinWorldPosition);
+    }
+
+    void PinWorldPosition(Vector3 pinWorldPosition)
+    {
+        transform.position = pinWorldPosition;
     }
 }

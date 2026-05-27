@@ -7,6 +7,8 @@ using UnityEngine;
 /// </summary>
 public class HoopSpawner : MonoBehaviour
 {
+    const string SpawnPointNamePrefix = "Point_";
+
     [Header("Настройки спавна")]
     [SerializeField] GameObject hoopPrefab;
     [SerializeField] bool randomizeOnStart = true;
@@ -28,7 +30,7 @@ public class HoopSpawner : MonoBehaviour
     {
         if (_spawnPoints.Count == 0)
         {
-            Debug.LogError("HoopSpawner: не найдены точки спавна. Добавьте дочерние объекты-точки.", this);
+            Debug.LogError("HoopSpawner: не найдены точки спавна (дочерние Point_*).", this);
             return;
         }
 
@@ -37,12 +39,22 @@ public class HoopSpawner : MonoBehaviour
             return;
 
         if (randomizeOnStart)
-            PlaceHoopAtSpawnPoint(_currentHoop.transform, PickRandomSpawnIndex(-1));
+        {
+            int spawnIndex = PickRandomSpawnIndex(-1);
+            PlaceHoopAtSpawnPoint(_currentHoop.transform, spawnIndex);
+        }
+        else if (_currentSpawnIndex < 0)
+        {
+            _currentSpawnIndex = FindClosestSpawnIndex(_currentHoop.transform.position);
+        }
 
         SubscribeToHoopHealth(_currentHoop);
 
         if (playSpawnOnStart && _currentHoop.TryGetComponent(out HoopRelocateAnimator relocateAnimator))
-            StartCoroutine(relocateAnimator.PlaySpawnRoutine());
+        {
+            Vector3 pin = _spawnPoints[_currentSpawnIndex].position;
+            StartCoroutine(relocateAnimator.PlaySpawnRoutine(pin));
+        }
     }
 
     void OnDestroy()
@@ -57,8 +69,13 @@ public class HoopSpawner : MonoBehaviour
         for (int i = 0; i < transform.childCount; i++)
         {
             Transform child = transform.GetChild(i);
+            if (!child.name.StartsWith(SpawnPointNamePrefix))
+                continue;
+
             _spawnPoints.Add(child);
         }
+
+        _spawnPoints.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
     }
 
     void AttachOrSpawnInitialHoop()
@@ -129,22 +146,20 @@ public class HoopSpawner : MonoBehaviour
         if (!hoopObject.TryGetComponent(out HoopRelocateAnimator relocateAnimator))
             relocateAnimator = hoopObject.AddComponent<HoopRelocateAnimator>();
 
-        // 1. Полоска HP уменьшается (урон уже применён в момент гола).
         yield return hoopHealth.WaitForHealthBarAfterDamage();
 
-        // 2. Анимация death на текущей позиции.
-        yield return relocateAnimator.PlayDeathRoutine();
+        Vector3 deathPin = hoopObject.transform.position;
+        yield return relocateAnimator.PlayDeathRoutine(deathPin);
 
-        // 3. Перенос в новую точку.
         int nextIndex = PickRandomSpawnIndex(avoidSameSpawnPoint ? _currentSpawnIndex : -1);
         PlaceHoopAtSpawnPoint(hoopObject.transform, nextIndex);
+        Vector3 spawnPin = _spawnPoints[nextIndex].position;
 
         hoopHealth.ClearShotTrackingForRelocate();
         if (hoopObject.TryGetComponent(out HoopNetReaction netReaction))
             netReaction.ResetShot();
 
-        // 4. Появление с анимацией spawn.
-        yield return relocateAnimator.PlaySpawnRoutine();
+        yield return relocateAnimator.PlaySpawnRoutine(spawnPin);
 
         hoopHealth.SetRelocateBusy(false);
         _relocateRoutine = null;
@@ -159,16 +174,39 @@ public class HoopSpawner : MonoBehaviour
 
     int PickRandomSpawnIndex(int excludedIndex)
     {
-        if (_spawnPoints.Count == 1)
+        int count = _spawnPoints.Count;
+        if (count <= 1)
             return 0;
 
-        if (!avoidSameSpawnPoint || excludedIndex < 0 || _spawnPoints.Count <= 1)
-            return Random.Range(0, _spawnPoints.Count);
+        if (!avoidSameSpawnPoint || excludedIndex < 0)
+            return Random.Range(0, count);
 
-        int index = Random.Range(0, _spawnPoints.Count - 1);
-        if (index >= excludedIndex)
-            index++;
+        int start = Random.Range(0, count);
+        for (int offset = 0; offset < count; offset++)
+        {
+            int candidate = (start + offset) % count;
+            if (candidate != excludedIndex)
+                return candidate;
+        }
 
-        return index;
+        return excludedIndex == 0 ? 1 : 0;
+    }
+
+    int FindClosestSpawnIndex(Vector3 worldPosition)
+    {
+        int closestIndex = 0;
+        float closestSqr = float.MaxValue;
+
+        for (int i = 0; i < _spawnPoints.Count; i++)
+        {
+            float sqr = (_spawnPoints[i].position - worldPosition).sqrMagnitude;
+            if (sqr >= closestSqr)
+                continue;
+
+            closestSqr = sqr;
+            closestIndex = i;
+        }
+
+        return closestIndex;
     }
 }
