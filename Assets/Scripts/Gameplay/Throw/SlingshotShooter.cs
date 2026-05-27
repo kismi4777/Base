@@ -42,6 +42,11 @@ public class SlingshotShooter : MonoBehaviour
 
     public event Action<SlingshotShooter> OnThrown;
 
+    /// <summary>
+    /// Блокирует прицеливание игрока (например, во время броска бота).
+    /// </summary>
+    public bool IsInputLocked { get; set; }
+
     Rigidbody _rb;
     Vector2 _startScreenPos;
     Vector2 _currentScreenPos;
@@ -84,6 +89,9 @@ public class SlingshotShooter : MonoBehaviour
 
     bool TryBeginAim()
     {
+        if (IsInputLocked)
+            return false;
+
         if (_throwConsumed)
             return false;
 
@@ -186,6 +194,80 @@ public class SlingshotShooter : MonoBehaviour
         return force;
     }
 
+    /// <summary>
+    /// Тот же расчёт силы, что и у игрока: дуга от натяжения, направление в плоскости XZ.
+    /// planeDirectionXZ — желаемый горизонтальный вектор (X и Z мира), длина может быть любой; берётся направление.
+    /// normalizedPull01 — сила броска 0..1 (как доля maxPullDistance).
+    /// </summary>
+    public Vector3 ComputeThrowForceForPlanarDirection(Vector3 planeDirectionXZ, float normalizedPull01)
+    {
+        Vector2 dir = new Vector2(planeDirectionXZ.x, planeDirectionXZ.z);
+        if (dir.sqrMagnitude < 0.0001f)
+            return Vector3.zero;
+
+        dir.Normalize();
+        float forwardWeight = Mathf.Max(dir.y, minForwardFraction);
+        Vector2 xzDirection = new Vector2(dir.x, forwardWeight).normalized;
+
+        float pullMagnitude = Mathf.Clamp01(normalizedPull01) * maxPullDistance;
+        if (pullMagnitude < minPullMagnitude)
+            pullMagnitude = minPullMagnitude;
+
+        float normalizedPower = pullMagnitude / Mathf.Max(maxPullDistance, 0.001f);
+        float elevationRad = Mathf.Lerp(minLaunchElevationDeg, maxLaunchElevationDeg, normalizedPower) * Mathf.Deg2Rad;
+        float totalImpulse = pullMagnitude * powerMultiplier;
+
+        float horizontalImpulse = totalImpulse * Mathf.Cos(elevationRad);
+        float verticalImpulse = totalImpulse * Mathf.Sin(elevationRad);
+
+        float verticalForce =
+            (verticalImpulse + horizontalImpulse * xzDirection.y * arcHeightPerForward) * arcLoftMultiplier;
+
+        Vector3 force = new Vector3(
+            xzDirection.x * horizontalImpulse,
+            verticalForce,
+            xzDirection.y * horizontalImpulse);
+
+        if (force.z < 0f)
+            force.z = 0f;
+        if (force.y < 0f)
+            force.y = 0f;
+
+        return force;
+    }
+
+    /// <summary>
+    /// Бросок без ввода: та же физика и дуга, что у игрока.
+    /// </summary>
+    public bool TryLaunchScripted(Vector3 force, PvPTeam throwerTeam)
+    {
+        if (!EnsureInitialized())
+            return false;
+
+        if (force == Vector3.zero)
+            return false;
+
+        if (!TryGetComponent(out BallThrowOwnership ownership))
+            ownership = gameObject.AddComponent<BallThrowOwnership>();
+
+        ownership.SetLastThrower(throwerTeam);
+
+        _rb.isKinematic = false;
+        _rb.linearVelocity = Vector3.zero;
+        _rb.angularVelocity = Vector3.zero;
+        _rb.AddForce(force, ForceMode.Impulse);
+        ApplyBackspin(force);
+
+        Vector3 launchVelocity = force / Mathf.Max(_rb.mass, 0.001f);
+        flightSpeedController?.BeginControl(launchVelocity);
+        NotifyHoopNetReactions();
+        NotifyHoopHealth();
+
+        _throwConsumed = true;
+        OnThrown?.Invoke(this);
+        return true;
+    }
+
     void Shoot()
     {
         if (!EnsureInitialized())
@@ -203,6 +285,10 @@ public class SlingshotShooter : MonoBehaviour
         _rb.angularVelocity = Vector3.zero;
         _rb.AddForce(force, ForceMode.Impulse);
         ApplyBackspin(force);
+
+        if (!TryGetComponent(out BallThrowOwnership ownership))
+            ownership = gameObject.AddComponent<BallThrowOwnership>();
+        ownership.SetLastThrower(PvPTeam.Player);
 
         Vector3 launchVelocity = force / Mathf.Max(_rb.mass, 0.001f);
         flightSpeedController?.BeginControl(launchVelocity);

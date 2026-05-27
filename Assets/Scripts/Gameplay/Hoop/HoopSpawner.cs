@@ -16,6 +16,16 @@ public class HoopSpawner : MonoBehaviour
     [SerializeField] bool avoidSameSpawnPoint = true;
     [SerializeField] bool playSpawnOnStart = false;
 
+    [Header("Спавн рядом с кольцом соперника")]
+    [Tooltip("Если задано, кольцо не появится на той же точке, что и у другого HoopSpawner.")]
+    [SerializeField] HoopSpawner spawnPeer;
+    [SerializeField] bool excludePeerSpawnPoint = true;
+
+    [Header("PvP: чьё кольцо спавнит этот спавнер")]
+    [SerializeField] bool configurePvPFilterOnSpawn = true;
+    [SerializeField] bool usePvPTeamFilterOnSpawn = true;
+    [SerializeField] PvPTeam defendedTeamOnSpawn = PvPTeam.Player;
+
     readonly List<Transform> _spawnPoints = new();
     GameObject _currentHoop;
     int _currentSpawnIndex = -1;
@@ -80,10 +90,21 @@ public class HoopSpawner : MonoBehaviour
 
     void AttachOrSpawnInitialHoop()
     {
+        if (hoopPrefab != null)
+        {
+            int spawnIndex = PickRandomSpawnIndex(-1);
+            Transform spawnPoint = _spawnPoints[spawnIndex];
+            _currentHoop = Instantiate(hoopPrefab, spawnPoint.position, spawnPoint.rotation);
+            ConfigureSpawnedHoop(_currentHoop);
+            _currentSpawnIndex = spawnIndex;
+            return;
+        }
+
         HoopHealth[] hoopHealths = FindObjectsByType<HoopHealth>(FindObjectsSortMode.None);
         if (hoopHealths.Length > 0)
         {
             _currentHoop = hoopHealths[0].gameObject;
+            ConfigureSpawnedHoop(_currentHoop);
             if (removeExtraHoopsOnStart)
             {
                 for (int i = 1; i < hoopHealths.Length; i++)
@@ -95,16 +116,7 @@ public class HoopSpawner : MonoBehaviour
             return;
         }
 
-        if (hoopPrefab == null)
-        {
-            Debug.LogError("HoopSpawner: не назначен префаб кольца.", this);
-            return;
-        }
-
-        int spawnIndex = PickRandomSpawnIndex(-1);
-        Transform spawnPoint = _spawnPoints[spawnIndex];
-        _currentHoop = Instantiate(hoopPrefab, spawnPoint.position, spawnPoint.rotation);
-        _currentSpawnIndex = spawnIndex;
+        Debug.LogError("HoopSpawner: не назначен префаб кольца (hoopPrefab).", this);
     }
 
     void SubscribeToHoopHealth(GameObject hoop)
@@ -165,6 +177,26 @@ public class HoopSpawner : MonoBehaviour
         _relocateRoutine = null;
     }
 
+    /// <summary>
+    /// Индекс текущей точки спавна (для исключения совпадения с кольцом соперника).
+    /// </summary>
+    public int CurrentSpawnIndex => _currentSpawnIndex;
+
+    /// <summary>
+    /// Мгновенно переносит кольцо на другую точку, если совпала с точкой соперника (без анимации смерти/появления).
+    /// </summary>
+    public void InstantRelocateIfSameIndexAsPeer()
+    {
+        if (spawnPeer == null || !excludePeerSpawnPoint || _currentHoop == null || _spawnPoints.Count <= 1)
+            return;
+
+        if (_currentSpawnIndex != spawnPeer.CurrentSpawnIndex)
+            return;
+
+        int next = PickRandomSpawnIndex(-1);
+        PlaceHoopAtSpawnPoint(_currentHoop.transform, next);
+    }
+
     void PlaceHoopAtSpawnPoint(Transform hoopTransform, int spawnIndex)
     {
         Transform spawnPoint = _spawnPoints[spawnIndex];
@@ -178,18 +210,27 @@ public class HoopSpawner : MonoBehaviour
         if (count <= 1)
             return 0;
 
-        if (!avoidSameSpawnPoint || excludedIndex < 0)
-            return Random.Range(0, count);
+        int peerExcluded = spawnPeer != null && excludePeerSpawnPoint ? spawnPeer.CurrentSpawnIndex : -1;
+        bool excludeSelfPrevious = avoidSameSpawnPoint && excludedIndex >= 0;
 
         int start = Random.Range(0, count);
         for (int offset = 0; offset < count; offset++)
         {
             int candidate = (start + offset) % count;
-            if (candidate != excludedIndex)
-                return candidate;
+            if (excludeSelfPrevious && candidate == excludedIndex)
+                continue;
+            if (peerExcluded >= 0 && candidate == peerExcluded)
+                continue;
+            return candidate;
         }
 
-        return excludedIndex == 0 ? 1 : 0;
+        for (int i = 0; i < count; i++)
+        {
+            if ((!excludeSelfPrevious || i != excludedIndex) && (peerExcluded < 0 || i != peerExcluded))
+                return i;
+        }
+
+        return 0;
     }
 
     int FindClosestSpawnIndex(Vector3 worldPosition)
@@ -208,5 +249,16 @@ public class HoopSpawner : MonoBehaviour
         }
 
         return closestIndex;
+    }
+
+    void ConfigureSpawnedHoop(GameObject hoop)
+    {
+        if (!configurePvPFilterOnSpawn || hoop == null)
+            return;
+
+        if (!hoop.TryGetComponent(out HoopHealth hoopHealth))
+            return;
+
+        hoopHealth.ConfigurePvPTeamFilter(usePvPTeamFilterOnSpawn, defendedTeamOnSpawn);
     }
 }

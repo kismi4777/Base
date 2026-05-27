@@ -37,6 +37,7 @@ public class HoopNetReaction : MonoBehaviour
     [SerializeField] Transform[] excludedRimHitRoots;
 
     Rigidbody _ball;
+    HoopHealth _hoopHealth;
     Vector3 _previousBallPosition;
     bool _hasPreviousBallPosition;
     float _lastTriggerTime = -10f;
@@ -62,6 +63,13 @@ public class HoopNetReaction : MonoBehaviour
             netVisual = transform;
 
         _ball = targetBall;
+        if (TryGetComponent(out HoopHealth hoopHealth))
+        {
+            _hoopHealth = hoopHealth;
+            _hoopHealth.Scored -= HandleHoopScored;
+            _hoopHealth.Scored += HandleHoopScored;
+        }
+
         _visualParent = netVisual.parent != null ? netVisual.parent : transform;
         _baseLocalPosition = netVisual.localPosition;
         _baseLocalRotation = netVisual.localRotation;
@@ -125,12 +133,42 @@ public class HoopNetReaction : MonoBehaviour
 
     public void OnBallLaunched(Rigidbody ball)
     {
-        if (targetBall != null && ball != targetBall)
+        if (targetBall != null && ball != targetBall && !ShouldRetargetToLaunchedBall())
             return;
 
         targetBall = ball;
         _ball = ball;
         _hasPreviousBallPosition = false;
+    }
+
+    bool ShouldRetargetToLaunchedBall()
+    {
+        if (!TryGetComponent(out HoopHealth hoopHealth))
+            return false;
+
+        // В PvP у нас два мяча (игрока и бота), поэтому реакция сетки должна
+        // переключаться на мяч текущего броска, а не «залипать» на одном targetBall.
+        return hoopHealth.UsesPvPTeamFilter;
+    }
+
+    void HandleHoopScored(HoopHealth hoopHealth)
+    {
+        if (hoopHealth == null || hoopHealth != _hoopHealth)
+            return;
+
+        Rigidbody ball = _ball != null ? _ball : targetBall;
+        Vector3 velocity = ball != null ? ball.linearVelocity : Vector3.down * minDownwardSpeed;
+        Vector3 horizontalVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
+        Vector2 sway = new Vector2(horizontalVelocity.x, horizontalVelocity.z);
+        if (sway.sqrMagnitude < 0.0001f)
+            sway = Random.insideUnitCircle.normalized;
+        if (sway.sqrMagnitude < 0.0001f)
+            sway = Vector2.right;
+
+        float speed = ball != null ? velocity.magnitude : minDownwardSpeed;
+        float normalizedImpact = Mathf.Clamp01(speed / Mathf.Max(0.001f, maxSpeedForFullImpact));
+        StartAnimation(Mathf.Lerp(0.45f, 1f, normalizedImpact), sway, true);
+        _lastTriggerTime = Time.time;
     }
 
     public void ResetShot()
@@ -289,5 +327,11 @@ public class HoopNetReaction : MonoBehaviour
     void OnDisable()
     {
         StopAnimation();
+    }
+
+    void OnDestroy()
+    {
+        if (_hoopHealth != null)
+            _hoopHealth.Scored -= HandleHoopScored;
     }
 }

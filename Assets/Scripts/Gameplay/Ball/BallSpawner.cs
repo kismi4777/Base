@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,6 +10,8 @@ using UnityEngine;
 public class BallSpawner : MonoBehaviour
 {
     [SerializeField] SlingshotShooter ballPrefab;
+    [Tooltip("Стартовый мяч игрока на сцене. Если задан, спавнер использует только его как исходную точку.")]
+    [SerializeField] SlingshotShooter scenePlayerBall;
     [SerializeField] float respawnDelay = 1f;
     [Tooltip("Сколько мячей подготовить в пуле заранее")]
     [Min(1)] [SerializeField] int prewarmCount = 2;
@@ -19,6 +22,16 @@ public class BallSpawner : MonoBehaviour
     Transform _spawnParent;
     SlingshotShooter _throwableBall;
     Coroutine _respawnRoutine;
+
+    /// <summary>
+    /// Текущий мяч, готовый к броску (после RegisterBall), либо null во время полёта.
+    /// </summary>
+    public SlingshotShooter CurrentThrowableBall => _throwableBall;
+
+    /// <summary>
+    /// Вызывается, когда активный мяч снова готов к броску (после респавна или старта сцены).
+    /// </summary>
+    public event Action<SlingshotShooter> ThrowableBallReady;
 
     public static BallSpawner Instance { get; private set; }
 
@@ -53,7 +66,7 @@ public class BallSpawner : MonoBehaviour
 
     void CacheSpawnPoseFromSceneBall()
     {
-        SlingshotShooter sceneBall = FindFirstObjectByType<SlingshotShooter>();
+        SlingshotShooter sceneBall = ResolveScenePlayerBall();
         if (sceneBall == null)
             return;
 
@@ -62,6 +75,27 @@ public class BallSpawner : MonoBehaviour
         _spawnRotation = t.rotation;
         _spawnParent = t.parent;
         _throwableBall = sceneBall;
+    }
+
+    SlingshotShooter ResolveScenePlayerBall()
+    {
+        if (scenePlayerBall != null)
+            return scenePlayerBall;
+
+        SlingshotShooter[] shooters = FindObjectsByType<SlingshotShooter>(FindObjectsSortMode.None);
+        for (int i = 0; i < shooters.Length; i++)
+        {
+            SlingshotShooter shooter = shooters[i];
+            if (shooter == null)
+                continue;
+
+            if (shooter.gameObject.name.Contains("Bot"))
+                continue;
+
+            return shooter;
+        }
+
+        return FindFirstObjectByType<SlingshotShooter>();
     }
 
     public void RegisterBall(SlingshotShooter ball)
@@ -76,6 +110,8 @@ public class BallSpawner : MonoBehaviour
 
         if (ball.TryGetComponent(out BallFloorDespawn floorDespawn))
             floorDespawn.ResetForReuse();
+
+        ThrowableBallReady?.Invoke(ball);
     }
 
     public void OnBallThrown(SlingshotShooter ball)

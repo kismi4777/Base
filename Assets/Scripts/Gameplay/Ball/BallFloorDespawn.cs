@@ -6,6 +6,9 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class BallFloorDespawn : MonoBehaviour
 {
+    [Tooltip("Если true — мяч возвращается в BallSpawner (для мяча игрока). Для Ball_Bot выключить.")]
+    [SerializeField] bool despawnViaBallSpawner = true;
+
     Rigidbody _rb;
     SlingshotShooter _shooter;
     BallSpawner _spawner;
@@ -29,7 +32,15 @@ public class BallFloorDespawn : MonoBehaviour
             return;
 
         _despawned = true;
-        ResolveSpawner()?.ReleaseBall(_shooter);
+        if (despawnViaBallSpawner)
+        {
+            ResolveSpawner()?.ReleaseBall(_shooter);
+            return;
+        }
+
+        // Для отдельного мяча бота: не отдаём в пул игрока, просто возвращаем на старт.
+        _shooter?.ResetBall();
+        _despawned = false;
     }
 
     BallSpawner ResolveSpawner()

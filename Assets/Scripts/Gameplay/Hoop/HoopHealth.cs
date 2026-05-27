@@ -16,6 +16,13 @@ public class HoopHealth : MonoBehaviour
     [Header("Связи")]
     [SerializeField] Rigidbody targetBall;
 
+    [Header("PvP: чьё кольцо")]
+    [Tooltip("Отключено — гол засчитывается от любого мяча (как раньше). Иначе урон только если бросил соперник.")]
+    [SerializeField] bool usePvPTeamFilter;
+    [SerializeField] PvPTeam defendedTeam = PvPTeam.Player;
+    public bool UsesPvPTeamFilter => usePvPTeamFilter;
+    public PvPTeam DefendedTeam => defendedTeam;
+
     [Header("Параметры здоровья")]
     [SerializeField] int maxHealth = 5;
     [SerializeField] int damagePerScore = 1;
@@ -111,6 +118,9 @@ public class HoopHealth : MonoBehaviour
         if (Time.time - _lastScoreTime < retriggerCooldown)
             return;
 
+        if (usePvPTeamFilter && !IsOpponentBall(ball))
+            return;
+
         ApplyDamage();
         _lastScoreTime = Time.time;
     }
@@ -136,6 +146,15 @@ public class HoopHealth : MonoBehaviour
     public void SetRelocateBusy(bool busy)
     {
         _relocateBusy = busy;
+    }
+
+    /// <summary>
+    /// Публичная настройка PvP-фильтра для спавнеров/оркестратора.
+    /// </summary>
+    public void ConfigurePvPTeamFilter(bool enabled, PvPTeam team)
+    {
+        usePvPTeamFilter = enabled;
+        defendedTeam = team;
     }
 
     /// <summary>
@@ -254,9 +273,27 @@ public class HoopHealth : MonoBehaviour
         if (ball == null)
             return false;
 
+        // В PvP на сцене два мяча (игрок + бот), поэтому не ограничиваемся targetBall.
+        if (usePvPTeamFilter)
+            return ball.TryGetComponent(out BallBouncePhysics _);
+
         if (targetBall != null)
             return ball == targetBall;
 
         return ball.TryGetComponent(out BallBouncePhysics _);
+    }
+
+    /// <summary>
+    /// Урон по кольцу только если мяч бросил соперник защищающейся стороны.
+    /// </summary>
+    bool IsOpponentBall(Rigidbody ball)
+    {
+        if (ball == null)
+            return false;
+
+        if (!ball.TryGetComponent(out BallThrowOwnership ownership))
+            return false;
+
+        return ownership.LastThrower != defendedTeam;
     }
 }
