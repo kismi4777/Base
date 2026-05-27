@@ -208,6 +208,7 @@ public class SlingshotShooter : MonoBehaviour
         flightSpeedController?.BeginControl(launchVelocity);
         NotifyHoopMagnets(launchVelocity);
         NotifyHoopNetReactions();
+        NotifyHoopHealth();
 
         _throwConsumed = true;
         OnThrown?.Invoke(this);
@@ -225,6 +226,13 @@ public class SlingshotShooter : MonoBehaviour
         HoopNetReaction[] netReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
         for (int i = 0; i < netReactions.Length; i++)
             netReactions[i].OnBallLaunched(_rb);
+    }
+
+    void NotifyHoopHealth()
+    {
+        HoopHealth[] hoopHealths = FindObjectsByType<HoopHealth>(FindObjectsSortMode.None);
+        for (int i = 0; i < hoopHealths.Length; i++)
+            hoopHealths[i].OnBallLaunched(_rb);
     }
 
     void ApplyBackspin(Vector3 throwForce)
@@ -317,6 +325,10 @@ public class SlingshotShooter : MonoBehaviour
         HoopNetReaction[] netReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
         for (int i = 0; i < netReactions.Length; i++)
             netReactions[i].ResetShot();
+
+        HoopHealth[] hoopHealths = FindObjectsByType<HoopHealth>(FindObjectsSortMode.None);
+        for (int i = 0; i < hoopHealths.Length; i++)
+            hoopHealths[i].ResetShot();
     }
 
     void UpdateAimVisualPullback()
