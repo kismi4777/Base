@@ -206,19 +206,11 @@ public class SlingshotShooter : MonoBehaviour
 
         Vector3 launchVelocity = force / Mathf.Max(_rb.mass, 0.001f);
         flightSpeedController?.BeginControl(launchVelocity);
-        NotifyHoopMagnets(launchVelocity);
         NotifyHoopNetReactions();
         NotifyHoopHealth();
 
         _throwConsumed = true;
         OnThrown?.Invoke(this);
-    }
-
-    void NotifyHoopMagnets(Vector3 launchVelocity)
-    {
-        HoopRimMagnet[] magnets = FindObjectsByType<HoopRimMagnet>(FindObjectsSortMode.None);
-        for (int i = 0; i < magnets.Length; i++)
-            magnets[i].OnBallLaunched(_rb, launchVelocity);
     }
 
     void NotifyHoopNetReactions()
@@ -318,10 +310,6 @@ public class SlingshotShooter : MonoBehaviour
 
     void ResetHoopAssistState()
     {
-        HoopRimMagnet[] magnets = FindObjectsByType<HoopRimMagnet>(FindObjectsSortMode.None);
-        for (int i = 0; i < magnets.Length; i++)
-            magnets[i].ResetShot();
-
         HoopNetReaction[] netReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
         for (int i = 0; i < netReactions.Length; i++)
             netReactions[i].ResetShot();
