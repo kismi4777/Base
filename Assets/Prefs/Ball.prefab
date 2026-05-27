@@ -134,7 +134,7 @@ MonoBehaviour:
   markerPrefab: {fileID: 0}
   markerMaterial: {fileID: 2100000, guid: b386ba266dd8b5443bb1d84cab4e9b8f, type: 2}
   markerSize: 0.2
-  steps: 65
+  steps: 80
   timeStep: 0.05
   collisionMask:
     serializedVersion: 2

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Держит одно кольцо и переносит его в случайную точку спавна после каждого гола.
+/// Держит одно кольцо (тот же объект/префаб) и переносит его в случайную точку спавна после гола, сохраняя текущее HP.
 /// </summary>
 public class HoopSpawner : MonoBehaviour
 {
@@ -128,7 +128,7 @@ public class HoopSpawner : MonoBehaviour
         int nextIndex = PickRandomSpawnIndex(avoidSameSpawnPoint ? _currentSpawnIndex : -1);
         PlaceHoopAtSpawnPoint(hoopObject.transform, nextIndex);
 
-        hoopHealth.ResetForNewSpawn();
+        hoopHealth.ClearShotTrackingForRelocate();
         if (hoopObject.TryGetComponent(out HoopNetReaction netReaction))
             netReaction.ResetShot();
 

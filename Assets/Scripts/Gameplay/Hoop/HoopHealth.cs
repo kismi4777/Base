@@ -121,12 +121,12 @@ public class HoopHealth : MonoBehaviour
             OnHealthDepleted();
     }
 
-    public void ResetForNewSpawn()
+    /// <summary>
+    /// Сбрасывает только состояние гола для следующего броска. Здоровье не меняется.
+    /// </summary>
+    public void ClearShotTrackingForRelocate()
     {
-        _currentHealth = Mathf.Max(1, maxHealth);
         _enteredBallIds.Clear();
-        _lastScoreTime = -10f;
-        UpdateBarInstant();
     }
 
     void UpdateBarOnDamage()
