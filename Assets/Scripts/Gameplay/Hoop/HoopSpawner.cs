@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Держит одно кольцо (тот же объект/префаб) и переносит его в случайную точку спавна после гола, сохраняя текущее HP.
+/// Держит одно кольцо и переносит его после гола: полоска HP → death → новая точка → spawn.
 /// </summary>
 public class HoopSpawner : MonoBehaviour
 {
     [Header("Настройки спавна")]
     [SerializeField] GameObject hoopPrefab;
-    [SerializeField] float relocateDelay = 0.35f;
     [SerializeField] bool randomizeOnStart = true;
     [SerializeField] bool removeExtraHoopsOnStart = true;
     [SerializeField] bool avoidSameSpawnPoint = true;
+    [SerializeField] bool playSpawnOnStart = false;
 
     readonly List<Transform> _spawnPoints = new();
     GameObject _currentHoop;
@@ -40,6 +40,9 @@ public class HoopSpawner : MonoBehaviour
             PlaceHoopAtSpawnPoint(_currentHoop.transform, PickRandomSpawnIndex(-1));
 
         SubscribeToHoopHealth(_currentHoop);
+
+        if (playSpawnOnStart && _currentHoop.TryGetComponent(out HoopRelocateAnimator relocateAnimator))
+            StartCoroutine(relocateAnimator.PlaySpawnRoutine());
     }
 
     void OnDestroy()
@@ -121,10 +124,18 @@ public class HoopSpawner : MonoBehaviour
     IEnumerator RelocateAfterScoreRoutine(HoopHealth hoopHealth)
     {
         GameObject hoopObject = hoopHealth.gameObject;
-        hoopObject.SetActive(false);
+        hoopHealth.SetRelocateBusy(true);
 
-        yield return new WaitForSeconds(relocateDelay);
+        if (!hoopObject.TryGetComponent(out HoopRelocateAnimator relocateAnimator))
+            relocateAnimator = hoopObject.AddComponent<HoopRelocateAnimator>();
 
+        // 1. Полоска HP уменьшается (урон уже применён в момент гола).
+        yield return hoopHealth.WaitForHealthBarAfterDamage();
+
+        // 2. Анимация death на текущей позиции.
+        yield return relocateAnimator.PlayDeathRoutine();
+
+        // 3. Перенос в новую точку.
         int nextIndex = PickRandomSpawnIndex(avoidSameSpawnPoint ? _currentSpawnIndex : -1);
         PlaceHoopAtSpawnPoint(hoopObject.transform, nextIndex);
 
@@ -132,7 +143,10 @@ public class HoopSpawner : MonoBehaviour
         if (hoopObject.TryGetComponent(out HoopNetReaction netReaction))
             netReaction.ResetShot();
 
-        hoopObject.SetActive(true);
+        // 4. Появление с анимацией spawn.
+        yield return relocateAnimator.PlaySpawnRoutine();
+
+        hoopHealth.SetRelocateBusy(false);
         _relocateRoutine = null;
     }
 

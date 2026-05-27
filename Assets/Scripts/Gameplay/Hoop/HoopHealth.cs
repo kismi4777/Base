@@ -1,5 +1,6 @@
-using System.Collections.Generic;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -50,6 +51,9 @@ public class HoopHealth : MonoBehaviour
     readonly HashSet<int> _enteredBallIds = new();
 
     float _lastScoreTime = -10f;
+    bool _relocateBusy;
+
+    public bool IsRelocateBusy => _relocateBusy;
 
     void Awake()
     {
@@ -101,7 +105,7 @@ public class HoopHealth : MonoBehaviour
         if (!_enteredBallIds.Remove(ballId))
             return;
 
-        if (_currentHealth <= 0)
+        if (_currentHealth <= 0 || _relocateBusy)
             return;
 
         if (Time.time - _lastScoreTime < retriggerCooldown)
@@ -127,6 +131,20 @@ public class HoopHealth : MonoBehaviour
     public void ClearShotTrackingForRelocate()
     {
         _enteredBallIds.Clear();
+    }
+
+    public void SetRelocateBusy(bool busy)
+    {
+        _relocateBusy = busy;
+    }
+
+    /// <summary>
+    /// Ждёт, пока зелёная полоска HP догонит значение после урона.
+    /// </summary>
+    public IEnumerator WaitForHealthBarAfterDamage()
+    {
+        while (!Mathf.Approximately(_immediateFill01, _immediateTarget01))
+            yield return null;
     }
 
     void UpdateBarOnDamage()
