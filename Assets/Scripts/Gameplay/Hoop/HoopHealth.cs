@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,6 +9,8 @@ using UnityEngine.UI;
 /// </summary>
 public class HoopHealth : MonoBehaviour
 {
+    public event Action<HoopHealth> HealthDepleted;
+
     [Header("Связи")]
     [SerializeField] Rigidbody targetBall;
 
@@ -164,6 +167,7 @@ public class HoopHealth : MonoBehaviour
 
     void OnHealthDepleted()
     {
+        HealthDepleted?.Invoke(this);
         UpdateBarInstant();
 
         if (destroyOnZeroHealth)
