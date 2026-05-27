@@ -43,6 +43,11 @@ public class SlingshotShooter : MonoBehaviour
     public event Action<SlingshotShooter> OnThrown;
 
     /// <summary>
+    /// Мяч снова на стартовой позиции и готов к следующему броску (после ResetBall).
+    /// </summary>
+    public event Action<SlingshotShooter> OnReturnedToThrowPosition;
+
+    /// <summary>
     /// Блокирует прицеливание игрока (например, во время броска бота).
     /// </summary>
     public bool IsInputLocked { get; set; }
@@ -330,7 +335,7 @@ public class SlingshotShooter : MonoBehaviour
         _initialPosition = transform.position;
         _initialRotation = transform.rotation;
         _throwConsumed = false;
-        ResetBall();
+        ResetBall(notifyReturned: false);
     }
 
     public void CleanupBeforeDespawn()
@@ -349,7 +354,7 @@ public class SlingshotShooter : MonoBehaviour
         ResetHoopAssistState();
     }
 
-    public void ResetBall()
+    public void ResetBall(bool notifyReturned = true)
     {
         if (!EnsureInitialized())
             return;
@@ -366,6 +371,9 @@ public class SlingshotShooter : MonoBehaviour
 
         trajectory?.HideTrajectory();
         ResetHoopAssistState();
+
+        if (notifyReturned)
+            OnReturnedToThrowPosition?.Invoke(this);
     }
 
     void StopRigidbodyMotion()

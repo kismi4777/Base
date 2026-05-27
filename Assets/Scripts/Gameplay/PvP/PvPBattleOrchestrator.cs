@@ -30,9 +30,9 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
     [Tooltip("Вероятность 0–100: бросок по направлению на кольцо игрока; иначе — промах в сторону.")]
     [Range(0f, 100f)]
     [SerializeField] float botAccuracyPercent = 55f;
-    [Tooltip("Мин. секунд после броска игрока до броска бота (случайное время «когда захочет» в интервале с максимумом).")]
+    [Tooltip("Мин. секунд после возврата мяча бота на точку броска до следующего броска.")]
     [SerializeField] float botReactionDelayMinSeconds = 1f;
-    [Tooltip("Макс. секунд после броска игрока до броска бота (вместе с минимумом задаёт окно).")]
+    [Tooltip("Макс. секунд после возврата мяча бота на точку броска (вместе с минимумом задаёт окно).")]
     [SerializeField] float botReactionDelayMaxSeconds = 1.8f;
     [SerializeField] float normalizedPullMin = 0.72f;
     [SerializeField] float normalizedPullMax = 0.95f;
@@ -77,6 +77,7 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
 
         ResolveBotShooterIfNeeded();
         SnapBotBallToFixedSpawn();
+        ScheduleBotThrowAfterReactionDelay();
         _spawner.ThrowableBallReady += HandleThrowableBallReady;
         if (!TryResolveHoopsByTeamIfNeeded())
             StartCoroutine(WaitForHoopsRoutine());
@@ -206,18 +207,81 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
 
     void HandleBallThrown(SlingshotShooter thrownBall)
     {
+        // Событие только для мяча игрока: бот бросает по своему циклу, не после хода игрока.
         if (_matchEnded || thrownBall == null)
             return;
 
-        bool isBotThrow = botShooter != null && ReferenceEquals(thrownBall, botShooter);
-        if (isBotThrow)
+        if (botShooter != null && ReferenceEquals(thrownBall, botShooter))
+            return;
+    }
+
+    void ScheduleBotThrowAfterBallReturned()
+    {
+        if (_matchEnded)
+            return;
+
+        if (_botThrowRoutine != null)
+            return;
+
+        _botThrowRoutine = StartCoroutine(WaitForBotBallReturnThenScheduleThrow());
+    }
+
+    void ScheduleBotThrowAfterReactionDelay()
+    {
+        if (_matchEnded)
             return;
 
         StopBotRoutineIfAny();
-        _botThrowRoutine = StartCoroutine(BotThrowRoutine());
+        _botThrowRoutine = StartCoroutine(BotThrowAfterDelayRoutine());
     }
 
-    IEnumerator BotThrowRoutine()
+    IEnumerator WaitForBotBallReturnThenScheduleThrow()
+    {
+        SlingshotShooter shooter = ResolveBotShooterIfNeeded();
+        if (shooter == null)
+        {
+            _botThrowRoutine = null;
+            yield break;
+        }
+
+        if (!IsBotBallInFlight(shooter))
+        {
+            _botThrowRoutine = null;
+            if (!_matchEnded)
+                ScheduleBotThrowAfterReactionDelay();
+            yield break;
+        }
+
+        bool returned = false;
+        void OnReturned(SlingshotShooter ball)
+        {
+            if (ReferenceEquals(ball, shooter))
+                returned = true;
+        }
+
+        shooter.OnReturnedToThrowPosition += OnReturned;
+        while (!returned && !_matchEnded)
+            yield return null;
+
+        shooter.OnReturnedToThrowPosition -= OnReturned;
+        _botThrowRoutine = null;
+
+        if (_matchEnded)
+            yield break;
+
+        SnapBotBallToFixedSpawn(shooter);
+        ScheduleBotThrowAfterReactionDelay();
+    }
+
+    static bool IsBotBallInFlight(SlingshotShooter shooter)
+    {
+        if (shooter == null || !shooter.TryGetComponent(out Rigidbody rb))
+            return false;
+
+        return !rb.isKinematic;
+    }
+
+    IEnumerator BotThrowAfterDelayRoutine()
     {
         float minDelay = Mathf.Min(botReactionDelayMinSeconds, botReactionDelayMaxSeconds);
         float maxDelay = Mathf.Max(botReactionDelayMinSeconds, botReactionDelayMaxSeconds);
@@ -226,18 +290,25 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
             yield return new WaitForSeconds(reactionDelay);
 
         if (_matchEnded)
-            yield break;
-
-        SlingshotShooter shooter = ResolveBotShooterIfNeeded();
-        if (shooter == null)
         {
             _botThrowRoutine = null;
             yield break;
         }
 
+        // Сбрасываем до броска: OnThrown вызывается синхронно внутри TryLaunchScripted,
+        // иначе ScheduleBotThrowAfterBallReturned видит занятую корутину и не ждёт возврат мяча.
+        _botThrowRoutine = null;
+        ExecuteBotThrow();
+    }
+
+    void ExecuteBotThrow()
+    {
+        SlingshotShooter shooter = ResolveBotShooterIfNeeded();
+        if (shooter == null)
+            return;
+
         shooter.IsInputLocked = true;
-        if (botShooter != null && ReferenceEquals(shooter, botShooter))
-            SnapBotBallToFixedSpawn(shooter);
+        SnapBotBallToFixedSpawn(shooter);
         shooter.PrepareForThrow();
 
         bool rollHit = UnityEngine.Random.Range(0f, 100f) < botAccuracyPercent;
@@ -253,7 +324,6 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
             Vector3 missTarget = CalculateMissTargetPoint(hoopPos);
             if (!TryCalculatePerfectThrowForce(shooter, missTarget, out force))
             {
-                // Фолбэк на старую модель силы, если по какой-то причине баллистика не посчиталась.
                 Vector3 from = shooter.transform.position;
                 Vector3 planar = missTarget - from;
                 planar.y = 0f;
@@ -261,13 +331,11 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
                 force = shooter.ComputeThrowForceForPlanarDirection(planar, pull);
             }
         }
-        bool launched = shooter.TryLaunchScripted(force, PvPTeam.Bot);
-        if (!launched)
-            TryUnlockCurrentThrowableForPlayer();
 
-        if (launched)
-            TryUnlockCurrentThrowableForPlayer();
-        _botThrowRoutine = null;
+        if (shooter.TryLaunchScripted(force, PvPTeam.Bot))
+            ScheduleBotThrowAfterBallReturned();
+
+        TryUnlockCurrentThrowableForPlayer();
     }
 
     void StopBotRoutineIfAny()
