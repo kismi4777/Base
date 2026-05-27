@@ -975,6 +975,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1476897535699978939, guid: b55c0167163ef454b980bffd2351903e, type: 3}
+      propertyPath: useSpeedControl
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3131333055829750399, guid: b55c0167163ef454b980bffd2351903e, type: 3}
       propertyPath: despawnViaBallSpawner
       value: 0
@@ -2092,13 +2096,17 @@ MonoBehaviour:
   autoResolveHoopsByTeam: 1
   botShooter: {fileID: 735273175}
   botAimTarget: {fileID: 0}
-  botAccuracyPercent: 65
+  botAccuracyPercent: 100
   botAimDelaySeconds: 0.45
   normalizedPullMin: 0.72
   normalizedPullMax: 0.95
   missYawDegreesMin: 18
   missYawDegreesMax: 42
   playerUnlockDelayAfterBotThrow: 1.15
+  perfectAimTargetYOffset: -0.15
+  perfectArcApexHeight: 2.8
+  perfectAimForwardOffset: 0.02
+  perfectMaxUpVelocity: 14
   onPlayerWon:
     m_PersistentCalls:
       m_Calls: []
