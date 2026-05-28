@@ -13,6 +13,8 @@ public class BallBouncePhysics : MonoBehaviour
     Rigidbody _rb;
     Collider _collider;
     HoopNetReaction[] _hoopNetReactions;
+    BallAbilityProcessor _abilityProcessor;
+    BallThrowSession _throwSession;
 
     public event Action<float, Vector3> Impact;
 
@@ -20,6 +22,8 @@ public class BallBouncePhysics : MonoBehaviour
     {
         _rb = GetComponent<Rigidbody>();
         _collider = GetComponent<Collider>();
+        _abilityProcessor = GetComponent<BallAbilityProcessor>();
+        _throwSession = GetComponent<BallThrowSession>();
         CacheHoopNetReactions();
         ApplyRigidbodySettings();
         ApplyPhysicMaterial();
@@ -67,6 +71,7 @@ public class BallBouncePhysics : MonoBehaviour
 
         // Реакцию сетки от кольца запускаем при любом касании, даже очень мягком.
         NotifyRimHit(otherCollider, contact.point, collision.relativeVelocity, impactSpeed);
+        NotifyAbilityCollision(otherCollider, isRimHit: IsRimCollider(otherCollider));
 
         if (impactSpeed < settings.minImpactSpeed)
             return;
@@ -181,5 +186,49 @@ public class BallBouncePhysics : MonoBehaviour
     void CacheHoopNetReactions()
     {
         _hoopNetReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
+    }
+
+    void NotifyAbilityCollision(Collider otherCollider, bool isRimHit)
+    {
+        if (_abilityProcessor == null && _throwSession == null)
+            return;
+
+        bool isShield = IsShieldCollider(otherCollider);
+        if (isShield)
+            _abilityProcessor?.NotifyShieldCollision();
+
+        if (_throwSession != null && !_throwSession.ScoredThisThrow && (isRimHit || isShield))
+            _abilityProcessor?.NotifyRimOrShieldCollisionWithoutScore();
+    }
+
+    static bool IsShieldCollider(Collider otherCollider)
+    {
+        if (otherCollider == null)
+            return false;
+
+        Transform current = otherCollider.transform;
+        while (current != null)
+        {
+            if (current.name.IndexOf("Shild", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    bool IsRimCollider(Collider otherCollider)
+    {
+        if (otherCollider == null)
+            return false;
+
+        BounceSurface surface = otherCollider.GetComponentInParent<BounceSurface>();
+        if (surface != null && surface.surfaceType == BounceSurfaceType.Rim)
+            return true;
+
+        string colliderName = otherCollider.name;
+        string parentName = otherCollider.transform.parent != null ? otherCollider.transform.parent.name : string.Empty;
+        return colliderName.Contains("Ring") || parentName.Contains("Ring");
     }
 }

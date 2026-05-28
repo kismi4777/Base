@@ -53,6 +53,7 @@ public class SlingshotShooter : MonoBehaviour
     public bool IsInputLocked { get; set; }
 
     Rigidbody _rb;
+    BallAbilityProcessor _abilityProcessor;
     Vector2 _startScreenPos;
     Vector2 _currentScreenPos;
     bool _isAiming;
@@ -64,6 +65,7 @@ public class SlingshotShooter : MonoBehaviour
     void Awake()
     {
         _rb = GetComponent<Rigidbody>();
+        _abilityProcessor = GetComponent<BallAbilityProcessor>();
 
         if (trajectory == null)
             trajectory = GetComponentInChildren<TrajectoryPredictor>();
@@ -265,6 +267,7 @@ public class SlingshotShooter : MonoBehaviour
 
         Vector3 launchVelocity = force / Mathf.Max(_rb.mass, 0.001f);
         flightSpeedController?.BeginControl(launchVelocity);
+        NotifyThrowStarted();
         NotifyHoopNetReactions();
         NotifyHoopHealth();
 
@@ -297,11 +300,20 @@ public class SlingshotShooter : MonoBehaviour
 
         Vector3 launchVelocity = force / Mathf.Max(_rb.mass, 0.001f);
         flightSpeedController?.BeginControl(launchVelocity);
+        NotifyThrowStarted();
         NotifyHoopNetReactions();
         NotifyHoopHealth();
 
         _throwConsumed = true;
         OnThrown?.Invoke(this);
+    }
+
+    void NotifyThrowStarted()
+    {
+        if (_abilityProcessor == null)
+            _abilityProcessor = GetComponent<BallAbilityProcessor>();
+
+        _abilityProcessor?.NotifyThrowStarted();
     }
 
     void NotifyHoopNetReactions()
@@ -404,6 +416,8 @@ public class SlingshotShooter : MonoBehaviour
 
     void ResetHoopAssistState()
     {
+        FinalizeThrowAbilities();
+
         HoopNetReaction[] netReactions = FindObjectsByType<HoopNetReaction>(FindObjectsSortMode.None);
         for (int i = 0; i < netReactions.Length; i++)
             netReactions[i].ResetShot();
@@ -411,6 +425,27 @@ public class SlingshotShooter : MonoBehaviour
         HoopHealth[] hoopHealths = FindObjectsByType<HoopHealth>(FindObjectsSortMode.None);
         for (int i = 0; i < hoopHealths.Length; i++)
             hoopHealths[i].ResetShot();
+    }
+
+    void FinalizeThrowAbilities()
+    {
+        if (_abilityProcessor == null)
+            _abilityProcessor = GetComponent<BallAbilityProcessor>();
+
+        if (_abilityProcessor == null)
+            return;
+
+        _abilityProcessor.NotifyThrowEndedWithoutScore();
+
+        PvPTeam thrower = PvPTeam.Player;
+        if (TryGetComponent(out BallThrowOwnership ownership))
+            thrower = ownership.LastThrower;
+
+        HoopHealth enemyHoop = _abilityProcessor.ResolveEnemyHoop(thrower);
+        _abilityProcessor.TryApplySkeletMissDamage(enemyHoop, thrower);
+
+        if (TryGetComponent(out BallThrowSession session))
+            session.ResetBetweenThrows();
     }
 
     void UpdateAimVisualPullback()

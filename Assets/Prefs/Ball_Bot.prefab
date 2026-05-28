@@ -1090,6 +1090,9 @@ GameObject:
   - component: {fileID: 1476897535699978939}
   - component: {fileID: 4467691675062358116}
   - component: {fileID: 3131333055829750399}
+  - component: {fileID: 7091257089809759205}
+  - component: {fileID: 7317642297978174496}
+  - component: {fileID: 8014242809632459470}
   m_Layer: 0
   m_Name: Ball_Bot
   m_TagString: Untagged
@@ -1383,6 +1386,45 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   despawnViaBallSpawner: 1
+--- !u!114 &7091257089809759205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6566848033265396976}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e699b7dc5bca7f847a2c9d5fe2f3032e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skinRoot: {fileID: 0}
+  defaultSkin: 0
+--- !u!114 &7317642297978174496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6566848033265396976}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d2bf2d7d8f39c34483edcd11baf2c3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &8014242809632459470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6566848033265396976}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76eaf2652b63d424a860b716db6a38d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: c7e4a91b2d8f4e64a9b3c1d5e7f902ab, type: 2}
 --- !u!1 &6746829400201935287
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,6 +11,7 @@ using UnityEngine.UI;
 public class HoopHealth : MonoBehaviour
 {
     public event Action<HoopHealth> Scored;
+    public event Action<HoopHealth, int> PeriodicDamageApplied;
     public event Action<HoopHealth> HealthDepleted;
 
     [Header("Связи")]
@@ -62,6 +63,10 @@ public class HoopHealth : MonoBehaviour
 
     public bool IsRelocateBusy => _relocateBusy;
     public int LastAppliedDamage { get; private set; }
+    public int CurrentHealth => _currentHealth;
+    public int MaxHealthValue => maxHealth;
+    public float Health01 => GetHealth01();
+    public bool LastHitWasCritical { get; private set; }
 
     void Awake()
     {
@@ -119,22 +124,112 @@ public class HoopHealth : MonoBehaviour
         if (Time.time - _lastScoreTime < retriggerCooldown)
             return;
 
-        if (usePvPTeamFilter && !IsOpponentBall(ball))
-            return;
+        PvPTeam throwerTeam = ResolveThrowerTeam(ball);
+        bool isOpponentBall = !usePvPTeamFilter || IsOpponentBall(ball);
 
-        ApplyDamage();
+        if (!isOpponentBall)
+        {
+            if (TryApplyFriendlyPaladinHeal(ball, throwerTeam))
+                _lastScoreTime = Time.time;
+            return;
+        }
+
+        if (ball.TryGetComponent(out BallAbilityProcessor abilities))
+        {
+            BallScoreOutcome outcome = abilities.ComputeScoreOutcome(this, throwerTeam);
+            abilities.ApplyScoreOutcome(outcome, this, throwerTeam);
+        }
+        else
+        {
+            ApplyScoreDamage(damagePerScore, isCritical: false);
+        }
+
         _lastScoreTime = Time.time;
     }
 
-    void ApplyDamage()
+    bool TryApplyFriendlyPaladinHeal(Rigidbody ball, PvPTeam throwerTeam)
     {
-        LastAppliedDamage = damagePerScore;
-        _currentHealth = Mathf.Clamp(_currentHealth - damagePerScore, 0, maxHealth);
+        if (!ball.TryGetComponent(out BallAbilityProcessor abilities))
+            return false;
+
+        if (!ball.TryGetComponent(out BallSkinController skinController) || skinController.ActiveSkin != BallSkinId.Paladin)
+            return false;
+
+        BallScoreOutcome outcome = abilities.ComputeScoreOutcome(this, throwerTeam);
+        if (!outcome.IsFriendlyHealOnly)
+            return false;
+
+        abilities.ApplyScoreOutcome(outcome, this, throwerTeam);
+        return true;
+    }
+
+    /// <summary>Восстанавливает HP кольца (полоска над кольцом).</summary>
+    public int Heal(int amount)
+    {
+        if (amount <= 0 || _relocateBusy || _currentHealth <= 0)
+            return 0;
+
+        int before = _currentHealth;
+        _currentHealth = Mathf.Min(_currentHealth + amount, maxHealth);
+        int healed = _currentHealth - before;
+        if (healed <= 0)
+            return 0;
+
+        UpdateBarOnHeal();
+        return healed;
+    }
+
+    /// <summary>Кольцо защищается указанной командой (с учётом PvP и реестра).</summary>
+    public bool IsDefendedBy(PvPTeam team)
+    {
+        if (UsesPvPTeamFilter)
+            return DefendedTeam == team;
+
+        HoopCombatRegistry registry = HoopCombatRegistry.Instance;
+        return registry != null && registry.GetHoop(team) == this;
+    }
+
+    /// <summary>Урон от гола с учётом способностей.</summary>
+    public int ApplyScoreDamage(int amount, bool isCritical)
+    {
+        if (amount <= 0 || _currentHealth <= 0 || _relocateBusy)
+            return 0;
+
+        int applied = Mathf.Min(amount, _currentHealth);
+        LastAppliedDamage = applied;
+        LastHitWasCritical = isCritical;
+        _currentHealth = Mathf.Clamp(_currentHealth - applied, 0, maxHealth);
         UpdateBarOnDamage();
         Scored?.Invoke(this);
 
         if (_currentHealth <= 0)
             OnHealthDepleted();
+
+        return applied;
+    }
+
+    /// <summary>Урон от горения/яда. Не вызывает Scored (иначе кольцо релокается на каждый тик).</summary>
+    public void ApplyPeriodicDamage(int amount)
+    {
+        if (amount <= 0 || _currentHealth <= 0)
+            return;
+
+        LastAppliedDamage = amount;
+        LastHitWasCritical = false;
+        _currentHealth = Mathf.Clamp(_currentHealth - amount, 0, maxHealth);
+        UpdateBarOnDamage();
+        PeriodicDamageApplied?.Invoke(this, amount);
+
+        if (_currentHealth <= 0)
+            OnHealthDepleted();
+    }
+
+    static PvPTeam ResolveThrowerTeam(Rigidbody ball)
+    {
+        if (ball != null && ball.TryGetComponent(out BallThrowOwnership ownership))
+            return ownership.LastThrower;
+
+        return PvPTeam.Player;
     }
 
     /// <summary>
@@ -174,6 +269,22 @@ public class HoopHealth : MonoBehaviour
         _immediateTarget01 = target01;
         _delayedTarget01 = target01;
         _delayedCatchUpTimer = delayedFillStartDelay;
+    }
+
+    void UpdateBarOnHeal()
+    {
+        float target01 = GetHealth01();
+        _immediateTarget01 = target01;
+        _delayedTarget01 = target01;
+        _immediateFill01 = target01;
+        _delayedFill01 = target01;
+        _delayedCatchUpTimer = 0f;
+
+        if (fillImmediate != null)
+            fillImmediate.fillAmount = target01;
+
+        if (fillDelayed != null)
+            fillDelayed.fillAmount = target01;
     }
 
     void UpdateImmediateFill()

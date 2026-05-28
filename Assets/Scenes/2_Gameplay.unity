@@ -2057,6 +2057,9 @@ GameObject:
   - component: {fileID: 1410745433}
   - component: {fileID: 1410745432}
   - component: {fileID: 1410745431}
+  - component: {fileID: 1410745435}
+  - component: {fileID: 1410745434}
+  - component: {fileID: 1410745436}
   m_Layer: 0
   m_Name: PvP_Battle
   m_TagString: Untagged
@@ -2137,6 +2140,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1410745434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1410745430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc248a31f5a367242afe658b9a848aa6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerHoop: {fileID: 0}
+  botHoop: {fileID: 0}
+  playerShield: {fileID: 0}
+  botShield: {fileID: 0}
+--- !u!114 &1410745435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1410745430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4895f6e42b4afab408fbbfcbe997674f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerStartGold: 20
+  botStartGold: 20
+--- !u!114 &1410745436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1410745430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00c575db5debd8946bc3fe683a66dff4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  battleOrchestrator: {fileID: 1410745432}
+  requireSkinSelection: 1
 --- !u!1 &1415349593
 GameObject:
   m_ObjectHideFlags: 0
@@ -2147,6 +2194,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1415349595}
   - component: {fileID: 1415349594}
+  - component: {fileID: 1415349596}
   m_Layer: 0
   m_Name: BallSpawner
   m_TagString: Untagged
@@ -2187,6 +2235,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1415349596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1415349593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 912af09b1cb04fc46bdb6433e715a3a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ballSpawner: {fileID: 0}
 --- !u!1 &1447800707
 GameObject:
   m_ObjectHideFlags: 0
@@ -2502,6 +2563,7 @@ RectTransform:
   m_Children:
   - {fileID: 306476756}
   - {fileID: 1943548572}
+  - {fileID: 1952839238}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -3230,6 +3292,60 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1943548571}
   m_CullTransparentMesh: 1
+--- !u!1 &1952839237
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1952839238}
+  - component: {fileID: 1952839239}
+  m_Layer: 0
+  m_Name: PreMatchSkinSelect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1952839238
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1952839237}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -960.2654, y: -539.8507, z: 0}
+  m_LocalScale: {x: 1.59248, y: 1.59248, z: 1.59248}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1643872493}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1952839239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1952839237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a24571b9019f304a987b1ccb8c3c630, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  catalog: {fileID: 11400000, guid: d8f2e6a14b9c4d72a8e1f3056c7ab902, type: 2}
+  targetCanvas: {fileID: 1643872492}
+  previewBall: {fileID: 0}
+  matchStartGate: {fileID: 1410745436}
+  fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.82}
+  panelColor: {r: 0.12, g: 0.14, b: 0.2, a: 0.96}
+  buttonColor: {r: 0.22, g: 0.28, b: 0.38, a: 1}
+  buttonSelectedColor: {r: 0.35, g: 0.55, b: 0.85, a: 1}
+  confirmColor: {r: 0.2, g: 0.62, b: 0.35, a: 1}
 --- !u!1 &1966438361
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50af02d88d811942aeb343758e2549d, type: 3}
+  m_Name: BallAbilityConfig
+  m_EditorClassIdentifier: 
+  baseScoreDamage: 1
+  critMultiplier: 2
+  dragonDamagePerFlightSecond: 0.15
+  dragonMaxDamageBonus: 3
+  fireConsecutiveHitsToIgnite: 2
+  fireBurnDamagePerTick: 1
+  fireBurnTickInterval: 1
+  fireBurnDuration: 4
+  gnomGoldReward: 3
+  goblinEveryNthAccurateThrow: 3
+  goblinStealGoldAmount: 5
+  golemConsecutiveHitsForBuff: 2
+  golemMaxShieldBonus: 2
+  gorgyliaAntiHealDuration: 5
+  orcDamagePerShieldHpDifference: 0.02
+  orcMaxDamageMultiplier: 2.5
+  paladinSelfHealAmount: 2
+  skeletMissDamage: 1
+  wampirLifestealPercent: 0.5
+  wariorEnemyShieldThreshold: 0.3
+  zombiePoisonChance: 0.3
+  zombiePoisonDamagePerTick: 1
+  zombiePoisonTickInterval: 1.2
+  zombiePoisonDuration: 4

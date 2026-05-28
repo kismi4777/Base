@@ -63,10 +63,26 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
     BallSpawner _spawner;
     Coroutine _botThrowRoutine;
     bool _matchEnded;
+    bool _matchInitialized;
     SlingshotShooter _ballSubscribedForThrown;
 
     void Start()
     {
+        MatchStartGate gate = MatchStartGate.Instance;
+        if (gate != null && gate.ShouldBlockMatchStart())
+            return;
+
+        InitializeMatch();
+    }
+
+    /// <summary>Запускает матч (вызывается из MatchStartGate после выбора скина).</summary>
+    public void InitializeMatch()
+    {
+        if (_matchInitialized)
+            return;
+
+        _matchInitialized = true;
+
         _spawner = ballSpawner != null ? ballSpawner : BallSpawner.Instance;
         if (_spawner == null)
         {
