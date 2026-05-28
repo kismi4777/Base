@@ -214,11 +214,12 @@ public class HoopHealth : MonoBehaviour
         if (amount <= 0 || _currentHealth <= 0)
             return;
 
-        LastAppliedDamage = amount;
+        int applied = Mathf.Min(amount, _currentHealth);
+        LastAppliedDamage = applied;
         LastHitWasCritical = false;
-        _currentHealth = Mathf.Clamp(_currentHealth - amount, 0, maxHealth);
+        _currentHealth = Mathf.Clamp(_currentHealth - applied, 0, maxHealth);
         UpdateBarOnDamage();
-        PeriodicDamageApplied?.Invoke(this, amount);
+        PeriodicDamageApplied?.Invoke(this, applied);
 
         if (_currentHealth <= 0)
             OnHealthDepleted();

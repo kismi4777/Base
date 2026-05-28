@@ -7,6 +7,9 @@ public sealed class HoopStatusEffects : MonoBehaviour
     [SerializeField] HoopHealth hoopHealth;
     [Tooltip("Опционально: визуал огня на кольце (ищется автоматически по имени Fire).")]
     [SerializeField] GameObject burnVisual;
+    [Tooltip("Пауза перед первым тиком периодического урона (огонь/яд).")]
+    [Min(0f)]
+    [SerializeField] float firstTickDelaySeconds = 1f;
 
     Coroutine _burnRoutine;
     Coroutine _poisonRoutine;
@@ -57,6 +60,25 @@ public sealed class HoopStatusEffects : MonoBehaviour
 
     IEnumerator BurnRoutine(int damagePerTick, float tickInterval, float durationSeconds)
     {
+        yield return PeriodicDamageRoutine(damagePerTick, tickInterval, durationSeconds);
+        SetBurnVisualActive(false);
+        _burnRoutine = null;
+    }
+
+    IEnumerator PoisonRoutine(int damagePerTick, float tickInterval, float durationSeconds)
+    {
+        yield return PeriodicDamageRoutine(damagePerTick, tickInterval, durationSeconds);
+        _poisonRoutine = null;
+    }
+
+    IEnumerator PeriodicDamageRoutine(int damagePerTick, float tickInterval, float durationSeconds)
+    {
+        if (hoopHealth == null || damagePerTick <= 0 || durationSeconds <= 0f)
+            yield break;
+
+        if (firstTickDelaySeconds > 0f)
+            yield return new WaitForSeconds(firstTickDelaySeconds);
+
         float endTime = Time.time + durationSeconds;
         float interval = Mathf.Max(0.05f, tickInterval);
         var wait = new WaitForSeconds(interval);
@@ -70,27 +92,6 @@ public sealed class HoopStatusEffects : MonoBehaviour
 
             yield return wait;
         }
-
-        SetBurnVisualActive(false);
-        _burnRoutine = null;
-    }
-
-    IEnumerator PoisonRoutine(int damagePerTick, float tickInterval, float durationSeconds)
-    {
-        float endTime = Time.time + durationSeconds;
-        var wait = new WaitForSeconds(Mathf.Max(0.05f, tickInterval));
-
-        while (Time.time < endTime && hoopHealth != null)
-        {
-            hoopHealth.ApplyPeriodicDamage(damagePerTick);
-
-            if (Time.time >= endTime)
-                break;
-
-            yield return wait;
-        }
-
-        _poisonRoutine = null;
     }
 
     GameObject FindBurnVisualRoot()

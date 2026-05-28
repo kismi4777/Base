@@ -38,12 +38,17 @@ public class HoopDamagePopup : MonoBehaviour
 
         hoopHealth.Scored -= HandleScored;
         hoopHealth.Scored += HandleScored;
+        hoopHealth.PeriodicDamageApplied -= HandlePeriodicDamage;
+        hoopHealth.PeriodicDamageApplied += HandlePeriodicDamage;
     }
 
     void OnDisable()
     {
         if (hoopHealth != null)
+        {
             hoopHealth.Scored -= HandleScored;
+            hoopHealth.PeriodicDamageApplied -= HandlePeriodicDamage;
+        }
 
         if (_hideRoutine != null)
         {
@@ -58,6 +63,14 @@ public class HoopDamagePopup : MonoBehaviour
             return;
 
         Show(health.LastAppliedDamage);
+    }
+
+    void HandlePeriodicDamage(HoopHealth health, int damage)
+    {
+        if (health == null || damage <= 0)
+            return;
+
+        Show(damage);
     }
 
     void Show(int damage)
