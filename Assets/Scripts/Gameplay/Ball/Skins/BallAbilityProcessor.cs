@@ -11,6 +11,17 @@ public sealed class BallAbilityProcessor : MonoBehaviour
     BallSkinController _skins;
     BallThrowSession _session;
 
+    public BallAbilityConfig Config => config;
+
+    /// <summary>Множитель урона Дракона для текущего броска (то же значение, что на иконке и при голе).</summary>
+    public float GetDragonDamageMultiplierForFlight()
+    {
+        if (config == null || _session == null)
+            return 1f;
+
+        return config.ComputeDragonDamageMultiplier(_session.FlightDistanceMeters);
+    }
+
     void Awake()
     {
         _skins = GetComponent<BallSkinController>();
@@ -76,12 +87,9 @@ public sealed class BallAbilityProcessor : MonoBehaviour
         switch (skin)
         {
             case BallSkinId.Dragon:
-            {
-                float bonus = _session.FlightTimeSeconds * config.dragonDamagePerFlightSecond;
-                bonus = Mathf.Min(bonus, config.dragonMaxDamageBonus);
-                damage += Mathf.RoundToInt(bonus);
+                damage = config.ComputeDragonScoreDamage(
+                    _session != null ? _session.FlightDistanceMeters : 0f);
                 break;
-            }
             case BallSkinId.Orc:
                 damage = ApplyOrcBonus(damage, throwerTeam);
                 break;
@@ -113,11 +121,11 @@ public sealed class BallAbilityProcessor : MonoBehaviour
         switch (skin)
         {
             case BallSkinId.Fire:
-                if (consecutiveScores + 1 >= config.fireConsecutiveHitsToIgnite)
+                if (match.IsFireCharged(throwerTeam))
                     outcome.ApplyBurn = true;
                 break;
             case BallSkinId.Golem:
-                if (consecutiveScores + 1 >= config.golemConsecutiveHitsForBuff)
+                if (match.IsGolemCharged(throwerTeam))
                     outcome.GolemShieldBuff = true;
                 break;
             case BallSkinId.Gorgylia:
@@ -167,15 +175,17 @@ public sealed class BallAbilityProcessor : MonoBehaviour
         }
 
         _session.MarkScored();
-        BallAbilityMatchState.EnsureExists().RegisterScore(throwerTeam);
+
+        BallSkinId activeSkin = _skins != null ? _skins.ActiveSkin : BallSkinId.Defolt;
+        BallAbilityMatchState match = BallAbilityMatchState.EnsureExists();
+        match.RegisterScore(throwerTeam);
+        HandleChargeableAbilitiesAfterScore(activeSkin, throwerTeam, outcome, match);
 
         ShieldHealth enemyShield = ResolveShield(targetHoop.DefendedTeam, registry, targetHoop);
         if (enemyShield != null)
             enemyShield.TakeDamage(outcome.HoopDamage);
 
         int hoopDamageDealt = targetHoop.ApplyScoreDamage(outcome.HoopDamage, outcome.IsCritical);
-
-        BallSkinId activeSkin = _skins != null ? _skins.ActiveSkin : BallSkinId.Defolt;
         if (activeSkin == BallSkinId.Wampir && config != null && hoopDamageDealt > 0)
             ApplyWampirLifesteal(throwerTeam, hoopDamageDealt, registry);
 
@@ -204,6 +214,45 @@ public sealed class BallAbilityProcessor : MonoBehaviour
         {
             ShieldHealth ownShield = registry.GetShield(throwerTeam);
             ownShield?.IncreaseMaxHealth(config.golemMaxShieldBonus);
+        }
+    }
+
+    void HandleChargeableAbilitiesAfterScore(
+        BallSkinId skin,
+        PvPTeam throwerTeam,
+        BallScoreOutcome outcome,
+        BallAbilityMatchState match)
+    {
+        if (config == null || match == null)
+            return;
+
+        switch (skin)
+        {
+            case BallSkinId.Fire:
+                if (outcome.ApplyBurn)
+                {
+                    match.SetFireCharged(throwerTeam, false);
+                    match.ResetConsecutiveScores(throwerTeam);
+                }
+                else if (match.GetConsecutiveScores(throwerTeam) >= config.fireConsecutiveHitsToIgnite)
+                {
+                    match.SetFireCharged(throwerTeam, true);
+                }
+
+                break;
+
+            case BallSkinId.Golem:
+                if (outcome.GolemShieldBuff)
+                {
+                    match.SetGolemCharged(throwerTeam, false);
+                    match.ResetConsecutiveScores(throwerTeam);
+                }
+                else if (match.GetConsecutiveScores(throwerTeam) >= config.golemConsecutiveHitsForBuff)
+                {
+                    match.SetGolemCharged(throwerTeam, true);
+                }
+
+                break;
         }
     }
 

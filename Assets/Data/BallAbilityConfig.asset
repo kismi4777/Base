@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseScoreDamage: 10
   critMultiplier: 2
-  dragonDamagePerFlightSecond: 0.15
-  dragonMaxDamageBonus: 3
-  fireConsecutiveHitsToIgnite: 2
+  dragonDamagePerMeter: 1
+  dragonMaxDamageBonus: 15
+  fireConsecutiveHitsToIgnite: 1
   fireBurnDamagePerTick: 5
   fireBurnTickInterval: 1
   fireBurnDuration: 4
   gnomGoldReward: 15
   goblinEveryNthAccurateThrow: 3
   goblinStealGoldAmount: 5
-  golemConsecutiveHitsForBuff: 2
+  golemConsecutiveHitsForBuff: 1
   golemMaxShieldBonus: 2
   gorgyliaAntiHealDuration: 5
   orcDamagePerShieldHpDifference: 0.02

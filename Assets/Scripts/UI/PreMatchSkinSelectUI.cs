@@ -119,6 +119,9 @@ public sealed class PreMatchSkinSelectUI : MonoBehaviour
 
         if (save)
             BallSkinSelectionStorage.Save(entry.skinId);
+
+        BallSkillHudController skillHud = FindFirstObjectByType<BallSkillHudController>();
+        skillHud?.ApplySkin(entry.skinId, bindBall: false);
     }
 
     void ApplyPreviewSkin(BallSkinId skinId)

@@ -8,12 +8,36 @@ public sealed class BallAbilityConfig : ScriptableObject
     [Min(1)] public int baseScoreDamage = 1;
     [Min(1f)] public float critMultiplier = 2f;
 
-    [Header("Dragon — урон от времени полёта")]
-    [Min(0f)] public float dragonDamagePerFlightSecond = 0.15f;
-    [Min(1f)] public float dragonMaxDamageBonus = 3f;
+    [Header("Dragon — множитель урона от дистанции полёта")]
+    [Tooltip("Множитель = метры × это значение (минимум 1). То же число показывается на иконке.")]
+    [Min(0f)] public float dragonDamagePerMeter = 1f;
+    [Tooltip("Потолок множителя урона (например 15 = не больше ×15 к базовому урону).")]
+    [Min(1f)] public float dragonMaxDamageBonus = 15f;
+
+    /// <summary>Множитель урона по пройденным метрам (то же значение, что на иконке).</summary>
+    public float ComputeDragonDamageMultiplier(float flightDistanceMeters)
+    {
+        float multiplier = Mathf.Max(1f, flightDistanceMeters * dragonDamagePerMeter);
+        return Mathf.Min(multiplier, dragonMaxDamageBonus);
+    }
+
+    /// <summary>Итоговый урон гола для Дракона с учётом множителя.</summary>
+    public int ComputeDragonScoreDamage(float flightDistanceMeters)
+    {
+        float multiplier = ComputeDragonDamageMultiplier(flightDistanceMeters);
+        return Mathf.Max(1, Mathf.RoundToInt(baseScoreDamage * multiplier));
+    }
+
+    /// <summary>Текст множителя для UI (не метры полёта).</summary>
+    public string FormatDragonMultiplierForUi(float flightDistanceMeters)
+    {
+        float multiplier = ComputeDragonDamageMultiplier(flightDistanceMeters);
+        return multiplier.ToString("0.#");
+    }
 
     [Header("Fire — поджог кольца")]
-    [Min(1)] public int fireConsecutiveHitsToIgnite = 2;
+    [Tooltip("Голов подряд без промаха, чтобы разблокировать поджог; горение срабатывает на следующий гол.")]
+    [Min(1)] public int fireConsecutiveHitsToIgnite = 1;
     [Min(1)] public int fireBurnDamagePerTick = 1;
     [Min(0.1f)] public float fireBurnTickInterval = 1f;
     [Min(0.1f)] public float fireBurnDuration = 4f;

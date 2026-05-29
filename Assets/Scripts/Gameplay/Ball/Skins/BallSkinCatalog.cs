@@ -89,11 +89,11 @@ public sealed class BallSkinCatalog : ScriptableObject
     public static Entry[] CreateDefaultEntries() => new[]
     {
         EntryFor(BallSkinId.Defolt, "Обычный", "Без особой способности."),
-        EntryFor(BallSkinId.Dragon, "Дракон", "Чем дольше полёт мяча, тем выше урон."),
+        EntryFor(BallSkinId.Dragon, "Дракон", "Чем дальше пролетел мяч, тем выше множитель урона (число на иконке)."),
         EntryFor(BallSkinId.Fire, "Огонь", "Два гола подряд в чужое кольцо (два броска без промаха между ними) поджигают его: периодический урон по HP."),
         EntryFor(BallSkinId.Gnom, "Гном", "Отскок от щита: критический урон и немного золота."),
         EntryFor(BallSkinId.Goblin, "Гоблин", "Каждый 3-й точный гол: крит и кража золота у врага."),
-        EntryFor(BallSkinId.Golem, "Голем", "Два гола подряд увеличивают максимальное HP вашего щита."),
+        EntryFor(BallSkinId.Golem, "Голем", "Гол подряд заряжает усиление щита на следующий бросок."),
         EntryFor(BallSkinId.Gorgylia, "Горгилия", "Гол накладывает антилечение на врага."),
         EntryFor(BallSkinId.Orc, "Орк", "Урон выше, чем больше разница HP щитов."),
         EntryFor(BallSkinId.Paladin, "Паладин", "Гол в своё кольцо восстанавливает HP кольца и щита."),
