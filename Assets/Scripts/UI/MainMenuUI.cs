@@ -77,6 +77,7 @@ public sealed partial class MainMenuUI : MonoBehaviour
 
         MenuLocalization.LoadFromSave();
         MenuAudioSettings.LoadAndApply();
+        BallSkinSelectionStorage.Load();
         PlayerProgressUtility.EnsureStarterProfile();
         EnsureDemoDailyProgress();
 

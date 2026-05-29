@@ -43,6 +43,15 @@ public sealed class PreMatchSkinSelectUI : MonoBehaviour
     {
         BallSkinSelectionStorage.Load();
 
+        if (matchStartGate == null)
+            matchStartGate = FindFirstObjectByType<MatchStartGate>();
+
+        if (matchStartGate != null && !matchStartGate.RequiresSkinSelection)
+        {
+            enabled = false;
+            return;
+        }
+
         if (catalog == null)
         {
             catalog = ScriptableObject.CreateInstance<BallSkinCatalog>();
@@ -50,9 +59,6 @@ public sealed class PreMatchSkinSelectUI : MonoBehaviour
         }
 
         catalog.EnsurePopulated();
-
-        if (matchStartGate == null)
-            matchStartGate = FindFirstObjectByType<MatchStartGate>();
 
         if (previewBall == null)
             previewBall = ResolvePlayerBall();

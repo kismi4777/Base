@@ -82,6 +82,7 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
             return;
 
         _matchInitialized = true;
+        BallAbilityMatchState.EnsureExists().ResetMatch();
 
         _spawner = ballSpawner != null ? ballSpawner : BallSpawner.Instance;
         if (_spawner == null)

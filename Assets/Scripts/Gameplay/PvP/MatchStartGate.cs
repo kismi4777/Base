@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-/// <summary>Блокирует начало PvP-матча, пока игрок не выберет скин.</summary>
+/// <summary>Опционально блокирует начало PvP-матча (скин выбирается в главном меню).</summary>
 public sealed class MatchStartGate : MonoBehaviour
 {
     public static MatchStartGate Instance { get; private set; }
@@ -9,7 +9,7 @@ public sealed class MatchStartGate : MonoBehaviour
     public event Action MatchStarted;
 
     [SerializeField] PvPBattleOrchestrator battleOrchestrator;
-    [SerializeField] bool requireSkinSelection = true;
+    [SerializeField] bool requireSkinSelection;
 
     public bool IsMatchStarted { get; private set; }
     public bool RequiresSkinSelection => requireSkinSelection;
