@@ -60,6 +60,9 @@ public sealed class PvPBattleOrchestrator : MonoBehaviour
     [SerializeField] UnityEvent onPlayerWon;
     [SerializeField] UnityEvent onBotWon;
 
+    public UnityEvent PlayerWonEvent => onPlayerWon;
+    public UnityEvent BotWonEvent => onBotWon;
+
     BallSpawner _spawner;
     Coroutine _botThrowRoutine;
     bool _matchEnded;

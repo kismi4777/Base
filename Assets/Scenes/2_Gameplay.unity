@@ -5331,6 +5331,7 @@ GameObject:
   - component: {fileID: 1643872490}
   - component: {fileID: 1643872489}
   - component: {fileID: 1643872494}
+  - component: {fileID: 1643872495}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -5454,6 +5455,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f6e5ca42f8263f4d98049174252f707, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1643872495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1643872488}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1067e0769441fd642bb68a995da3fb94, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetCanvas: {fileID: 0}
+  battleOrchestrator: {fileID: 0}
+  fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.78}
+  winPanelColor: {r: 0.1, g: 0.22, b: 0.14, a: 0.97}
+  losePanelColor: {r: 0.24, g: 0.1, b: 0.1, a: 0.97}
+  primaryButtonColor: {r: 0.2, g: 0.62, b: 0.35, a: 1}
+  secondaryButtonColor: {r: 0.22, g: 0.28, b: 0.38, a: 1}
 --- !u!1 &1659236276
 GameObject:
   m_ObjectHideFlags: 0
