@@ -18,7 +18,7 @@ MonoBehaviour:
   - skinId: 0
     baseScoreDamage: 10
   - skinId: 1
-    baseScoreDamage: 1
+    baseScoreDamage: 1.5
   - skinId: 2
     baseScoreDamage: 5
   - skinId: 3

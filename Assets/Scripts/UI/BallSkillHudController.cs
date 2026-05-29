@@ -27,19 +27,26 @@ public sealed class BallSkillHudController : MonoBehaviour
         public Image WarriorIndicator;
     }
 
+    [Header("Сторона")]
+    [SerializeField] PvPTeam ownerTeam = PvPTeam.Player;
+
     [Header("Связи")]
     [SerializeField] Transform skillsRoot;
     [SerializeField] BallAbilityConfig abilityConfig;
     [SerializeField] BallSpawner ballSpawner;
+    [Tooltip("Мяч бота (Ball_Bot). Только для ownerTeam = Bot.")]
+    [SerializeField] SlingshotShooter botBall;
 
     readonly List<SkillIconBinding> _icons = new();
     BallSkinId _activeSkin = BallSkinId.Defolt;
-    SlingshotShooter _playerBall;
+    SlingshotShooter _trackedBall;
     BallSkinController _skinController;
     BallThrowSession _throwSession;
     BallAbilityProcessor _abilityProcessor;
     BallAbilityMatchState _matchState;
     HoopHealth _enemyHoop;
+
+    public PvPTeam OwnerTeam => ownerTeam;
 
     void Awake()
     {
@@ -48,22 +55,30 @@ public sealed class BallSkillHudController : MonoBehaviour
 
         CacheIcons();
 
-        if (ballSpawner == null)
+        if (ownerTeam == PvPTeam.Player && ballSpawner == null)
             ballSpawner = BallSpawner.Instance;
 
         _matchState = BallAbilityMatchState.EnsureExists();
         _matchState.StateChanged += RefreshDynamicWidgets;
 
-        ApplySkin(BallSkinSelectionStorage.SelectedSkin, bindBall: false);
+        if (ownerTeam == PvPTeam.Player)
+            ApplySkin(BallSkinSelectionStorage.SelectedSkin, bindBall: false);
     }
 
     void OnEnable()
     {
-        if (ballSpawner != null)
-            ballSpawner.ThrowableBallReady += HandleThrowableBallReady;
+        if (ownerTeam == PvPTeam.Player)
+        {
+            if (ballSpawner != null)
+                ballSpawner.ThrowableBallReady += HandlePlayerBallReady;
 
-        if (ballSpawner != null && ballSpawner.CurrentThrowableBall != null)
-            BindPlayerBall(ballSpawner.CurrentThrowableBall);
+            if (ballSpawner != null && ballSpawner.CurrentThrowableBall != null)
+                BindBall(ballSpawner.CurrentThrowableBall);
+        }
+        else
+        {
+            BindBotBall();
+        }
 
         RefreshDynamicWidgets();
     }
@@ -71,9 +86,9 @@ public sealed class BallSkillHudController : MonoBehaviour
     void OnDisable()
     {
         if (ballSpawner != null)
-            ballSpawner.ThrowableBallReady -= HandleThrowableBallReady;
+            ballSpawner.ThrowableBallReady -= HandlePlayerBallReady;
 
-        UnbindPlayerBall();
+        UnbindBall();
     }
 
     void OnDestroy()
@@ -88,16 +103,44 @@ public sealed class BallSkillHudController : MonoBehaviour
         UpdateWarriorIndicator();
     }
 
-    void HandleThrowableBallReady(SlingshotShooter ball) => BindPlayerBall(ball);
+    void HandlePlayerBallReady(SlingshotShooter ball) => BindBall(ball);
 
-    void BindPlayerBall(SlingshotShooter ball)
+    void BindBotBall()
     {
-        UnbindPlayerBall();
+        if (botBall == null)
+            botBall = ResolveBotBallInScene();
 
-        if (ball == null || ball.gameObject.name.Contains("Bot"))
+        BindBall(botBall);
+    }
+
+    static SlingshotShooter ResolveBotBallInScene()
+    {
+        SlingshotShooter[] shooters = FindObjectsByType<SlingshotShooter>(FindObjectsSortMode.None);
+        for (int i = 0; i < shooters.Length; i++)
+        {
+            SlingshotShooter shooter = shooters[i];
+            if (shooter != null && shooter.gameObject.name.Contains("Bot"))
+                return shooter;
+        }
+
+        return null;
+    }
+
+    void BindBall(SlingshotShooter ball)
+    {
+        UnbindBall();
+
+        if (ball == null)
             return;
 
-        _playerBall = ball;
+        bool isBotBall = ball.gameObject.name.Contains("Bot");
+        if (ownerTeam == PvPTeam.Player && isBotBall)
+            return;
+
+        if (ownerTeam == PvPTeam.Bot && !isBotBall)
+            return;
+
+        _trackedBall = ball;
 
         if (!ball.TryGetComponent(out _skinController))
             _skinController = null;
@@ -117,12 +160,12 @@ public sealed class BallSkillHudController : MonoBehaviour
         }
     }
 
-    void UnbindPlayerBall()
+    void UnbindBall()
     {
         if (_skinController != null)
             _skinController.SkinChanged -= HandleSkinChanged;
 
-        _playerBall = null;
+        _trackedBall = null;
         _skinController = null;
         _throwSession = null;
         _abilityProcessor = null;
@@ -255,8 +298,6 @@ public sealed class BallSkillHudController : MonoBehaviour
         if (_matchState == null)
             _matchState = BallAbilityMatchState.EnsureExists();
 
-        PvPTeam playerTeam = PvPTeam.Player;
-
         for (int i = 0; i < _icons.Count; i++)
         {
             SkillIconBinding icon = _icons[i];
@@ -266,7 +307,7 @@ public sealed class BallSkillHudController : MonoBehaviour
             switch (icon.Mode)
             {
                 case SkillHudMode.ChargeCounter:
-                    ApplyChargeCounter(icon, playerTeam);
+                    ApplyChargeCounter(icon, ownerTeam);
                     break;
                 case SkillHudMode.DragonMultiplier:
                     ApplyDragonIdle(icon);
@@ -383,7 +424,6 @@ public sealed class BallSkillHudController : MonoBehaviour
             && abilityConfig != null
             && _enemyHoop.Health01 <= abilityConfig.wariorEnemyShieldThreshold;
 
-        // Image = блокировка: включён, пока способность неактивна.
         icon.Value.WarriorIndicator.gameObject.SetActive(!unlocked);
     }
 
@@ -391,16 +431,14 @@ public sealed class BallSkillHudController : MonoBehaviour
     {
         _enemyHoop = null;
 
-        if (_playerBall == null)
-            return;
-
-        if (_playerBall.TryGetComponent(out BallAbilityProcessor processor))
-            _enemyHoop = processor.ResolveEnemyHoop(PvPTeam.Player);
+        if (_trackedBall != null && _trackedBall.TryGetComponent(out BallAbilityProcessor processor))
+            _enemyHoop = processor.ResolveEnemyHoop(ownerTeam);
 
         if (_enemyHoop == null)
         {
             HoopCombatRegistry registry = HoopCombatRegistry.Instance;
-            _enemyHoop = registry != null ? registry.GetHoop(PvPTeam.Bot) : null;
+            PvPTeam enemyTeam = ownerTeam == PvPTeam.Player ? PvPTeam.Bot : PvPTeam.Player;
+            _enemyHoop = registry != null ? registry.GetHoop(enemyTeam) : null;
         }
     }
 

@@ -120,8 +120,13 @@ public sealed class PreMatchSkinSelectUI : MonoBehaviour
         if (save)
             BallSkinSelectionStorage.Save(entry.skinId);
 
-        BallSkillHudController skillHud = FindFirstObjectByType<BallSkillHudController>();
-        skillHud?.ApplySkin(entry.skinId, bindBall: false);
+        BallSkillHudController[] skillHuds = FindObjectsByType<BallSkillHudController>(FindObjectsSortMode.None);
+        for (int i = 0; i < skillHuds.Length; i++)
+        {
+            BallSkillHudController skillHud = skillHuds[i];
+            if (skillHud != null && skillHud.OwnerTeam == PvPTeam.Player)
+                skillHud.ApplySkin(entry.skinId, bindBall: false);
+        }
     }
 
     void ApplyPreviewSkin(BallSkinId skinId)

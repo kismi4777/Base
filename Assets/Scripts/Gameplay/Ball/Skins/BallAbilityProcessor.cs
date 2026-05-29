@@ -81,7 +81,7 @@ public sealed class BallAbilityProcessor : MonoBehaviour
             return outcome;
         }
 
-        int damage = config.GetBaseScoreDamage(skin);
+        float damage = config.GetBaseScoreDamage(skin);
         outcome.IgnoreShieldDefense = skin == BallSkinId.Ricar;
 
         switch (skin)
@@ -111,11 +111,11 @@ public sealed class BallAbilityProcessor : MonoBehaviour
 
         if (forceCrit)
         {
-            damage = Mathf.RoundToInt(damage * config.critMultiplier);
+            damage = damage * config.critMultiplier;
             outcome.IsCritical = true;
         }
 
-        outcome.HoopDamage = Mathf.Max(1, damage);
+        outcome.HoopDamage = BallAbilityConfig.RoundScoreDamage(damage);
         outcome.ShieldDamage = outcome.IgnoreShieldDefense ? outcome.HoopDamage : 0;
 
         switch (skin)
@@ -279,7 +279,7 @@ public sealed class BallAbilityProcessor : MonoBehaviour
         return enemyHoop.Health01 <= config.wariorEnemyShieldThreshold;
     }
 
-    int ApplyOrcBonus(int baseDamage, PvPTeam throwerTeam)
+    float ApplyOrcBonus(float baseDamage, PvPTeam throwerTeam)
     {
         HoopCombatRegistry registry = HoopCombatRegistry.Instance;
         if (registry == null)
@@ -295,7 +295,7 @@ public sealed class BallAbilityProcessor : MonoBehaviour
         int diff = Mathf.Abs(throwerShield.CurrentHealth - enemyShield.CurrentHealth);
         float multiplier = 1f + diff * config.orcDamagePerShieldHpDifference;
         multiplier = Mathf.Min(multiplier, config.orcMaxDamageMultiplier);
-        return Mathf.Max(1, Mathf.RoundToInt(baseDamage * multiplier));
+        return baseDamage * multiplier;
     }
 
     void ApplyWampirLifesteal(PvPTeam throwerTeam, int enemyHoopDamageDealt, HoopCombatRegistry registry)

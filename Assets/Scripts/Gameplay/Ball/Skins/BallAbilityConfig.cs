@@ -11,19 +11,19 @@ public sealed class BallAbilityConfig : ScriptableObject
     public struct SkinScoreDamageEntry
     {
         public BallSkinId skinId;
-        [Min(1)] public int baseScoreDamage;
+        [Min(0.01f)] public float baseScoreDamage;
     }
 
     [Header("Общее")]
     [FormerlySerializedAs("baseScoreDamage")]
     [Tooltip("Урон при голе, если для скина нет отдельной записи ниже.")]
-    [Min(1)] public int defaultScoreDamage = 10;
+    [Min(0.01f)] public float defaultScoreDamage = 10f;
     [Min(1f)] public float critMultiplier = 2f;
 
     [Header("Урон при голе — отдельно для каждого скина")]
     [SerializeField] SkinScoreDamageEntry[] skinScoreDamages;
 
-    public int GetBaseScoreDamage(BallSkinId skinId)
+    public float GetBaseScoreDamage(BallSkinId skinId)
     {
         EnsureSkinDamagesPopulated();
 
@@ -32,12 +32,16 @@ public sealed class BallAbilityConfig : ScriptableObject
             for (int i = 0; i < skinScoreDamages.Length; i++)
             {
                 if (skinScoreDamages[i].skinId == skinId)
-                    return Mathf.Max(1, skinScoreDamages[i].baseScoreDamage);
+                    return Mathf.Max(0.01f, skinScoreDamages[i].baseScoreDamage);
             }
         }
 
-        return Mathf.Max(1, defaultScoreDamage);
+        return Mathf.Max(0.01f, defaultScoreDamage);
     }
+
+    /// <summary>Округляет урон до целого для HP кольца (минимум 1).</summary>
+    public static int RoundScoreDamage(float damage) =>
+        Mathf.Max(1, Mathf.RoundToInt(damage));
 
     public void EnsureSkinDamagesPopulated()
     {
@@ -71,8 +75,8 @@ public sealed class BallAbilityConfig : ScriptableObject
 #if UNITY_EDITOR
     void OnValidate()
     {
-        if (defaultScoreDamage < 1)
-            defaultScoreDamage = 1;
+        if (defaultScoreDamage < 0.01f)
+            defaultScoreDamage = 0.01f;
 
         EnsureSkinDamagesPopulated();
     }
@@ -89,9 +93,9 @@ public sealed class BallAbilityConfig : ScriptableObject
         return false;
     }
 
-    static SkinScoreDamageEntry[] CreateDefaultSkinDamages(BallSkinId[] allSkins, int damage)
+    static SkinScoreDamageEntry[] CreateDefaultSkinDamages(BallSkinId[] allSkins, float damage)
     {
-        damage = Mathf.Max(1, damage);
+        damage = Mathf.Max(0.01f, damage);
         var entries = new SkinScoreDamageEntry[allSkins.Length];
         for (int i = 0; i < allSkins.Length; i++)
         {
@@ -121,9 +125,9 @@ public sealed class BallAbilityConfig : ScriptableObject
     /// <summary>Итоговый урон гола для Дракона с учётом множителя.</summary>
     public int ComputeDragonScoreDamage(float flightDistanceMeters)
     {
-        int baseDamage = GetBaseScoreDamage(BallSkinId.Dragon);
+        float baseDamage = GetBaseScoreDamage(BallSkinId.Dragon);
         float multiplier = ComputeDragonDamageMultiplier(flightDistanceMeters);
-        return Mathf.Max(1, Mathf.RoundToInt(baseDamage * multiplier));
+        return RoundScoreDamage(baseDamage * multiplier);
     }
 
     /// <summary>Текст множителя для UI (не метры полёта).</summary>
