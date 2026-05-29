@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b50af02d88d811942aeb343758e2549d, type: 3}
   m_Name: BallAbilityConfig
   m_EditorClassIdentifier: 
-  baseScoreDamage: 1
+  baseScoreDamage: 10
   critMultiplier: 2
   dragonDamagePerFlightSecond: 0.15
   dragonMaxDamageBonus: 3
   fireConsecutiveHitsToIgnite: 2
-  fireBurnDamagePerTick: 1
+  fireBurnDamagePerTick: 5
   fireBurnTickInterval: 1
   fireBurnDuration: 4
-  gnomGoldReward: 3
+  gnomGoldReward: 15
   goblinEveryNthAccurateThrow: 3
   goblinStealGoldAmount: 5
   golemConsecutiveHitsForBuff: 2
@@ -28,11 +28,11 @@ MonoBehaviour:
   gorgyliaAntiHealDuration: 5
   orcDamagePerShieldHpDifference: 0.02
   orcMaxDamageMultiplier: 2.5
-  paladinSelfHealAmount: 2
-  skeletMissDamage: 1
+  paladinSelfHealAmount: 10
+  skeletMissDamage: 3
   wampirLifestealPercent: 0.5
   wariorEnemyShieldThreshold: 0.3
-  zombiePoisonChance: 0.3
-  zombiePoisonDamagePerTick: 1
-  zombiePoisonTickInterval: 1.2
-  zombiePoisonDuration: 4
+  zombiePoisonChance: 1
+  zombiePoisonDamagePerTick: 6
+  zombiePoisonTickInterval: 1.5
+  zombiePoisonDuration: 3
