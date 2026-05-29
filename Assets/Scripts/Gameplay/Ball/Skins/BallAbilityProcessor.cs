@@ -81,7 +81,7 @@ public sealed class BallAbilityProcessor : MonoBehaviour
             return outcome;
         }
 
-        int damage = config.baseScoreDamage;
+        int damage = config.GetBaseScoreDamage(skin);
         outcome.IgnoreShieldDefense = skin == BallSkinId.Ricar;
 
         switch (skin)

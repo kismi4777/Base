@@ -12,14 +12,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b50af02d88d811942aeb343758e2549d, type: 3}
   m_Name: BallAbilityConfig
   m_EditorClassIdentifier: 
-  baseScoreDamage: 10
+  defaultScoreDamage: 10
   critMultiplier: 2
+  skinScoreDamages:
+  - skinId: 0
+    baseScoreDamage: 10
+  - skinId: 1
+    baseScoreDamage: 1
+  - skinId: 2
+    baseScoreDamage: 5
+  - skinId: 3
+    baseScoreDamage: 7
+  - skinId: 4
+    baseScoreDamage: 8
+  - skinId: 5
+    baseScoreDamage: 10
+  - skinId: 6
+    baseScoreDamage: 10
+  - skinId: 7
+    baseScoreDamage: 20
+  - skinId: 8
+    baseScoreDamage: 10
+  - skinId: 9
+    baseScoreDamage: 10
+  - skinId: 10
+    baseScoreDamage: 10
+  - skinId: 11
+    baseScoreDamage: 9
+  - skinId: 12
+    baseScoreDamage: 10
+  - skinId: 13
+    baseScoreDamage: 8
+  - skinId: 14
+    baseScoreDamage: 7
   dragonDamagePerMeter: 1
   dragonMaxDamageBonus: 15
   fireConsecutiveHitsToIgnite: 1
-  fireBurnDamagePerTick: 5
+  fireBurnDamagePerTick: 2
   fireBurnTickInterval: 1
-  fireBurnDuration: 4
+  fireBurnDuration: 6
   gnomGoldReward: 15
   goblinEveryNthAccurateThrow: 3
   goblinStealGoldAmount: 5
@@ -31,8 +62,8 @@ MonoBehaviour:
   paladinSelfHealAmount: 10
   skeletMissDamage: 3
   wampirLifestealPercent: 0.5
-  wariorEnemyShieldThreshold: 0.3
-  zombiePoisonChance: 1
-  zombiePoisonDamagePerTick: 6
-  zombiePoisonTickInterval: 1.5
-  zombiePoisonDuration: 3
+  wariorEnemyShieldThreshold: 0.5
+  zombiePoisonChance: 0.3
+  zombiePoisonDamagePerTick: 1
+  zombiePoisonTickInterval: 0.5
+  zombiePoisonDuration: 10

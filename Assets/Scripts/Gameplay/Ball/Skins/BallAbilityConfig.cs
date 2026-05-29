@@ -1,12 +1,109 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>Настройки чисел для способностей скинов мяча.</summary>
 [CreateAssetMenu(fileName = "BallAbilityConfig", menuName = "Gameplay/Ball Ability Config")]
 public sealed class BallAbilityConfig : ScriptableObject
 {
+    [Serializable]
+    public struct SkinScoreDamageEntry
+    {
+        public BallSkinId skinId;
+        [Min(1)] public int baseScoreDamage;
+    }
+
     [Header("Общее")]
-    [Min(1)] public int baseScoreDamage = 1;
+    [FormerlySerializedAs("baseScoreDamage")]
+    [Tooltip("Урон при голе, если для скина нет отдельной записи ниже.")]
+    [Min(1)] public int defaultScoreDamage = 10;
     [Min(1f)] public float critMultiplier = 2f;
+
+    [Header("Урон при голе — отдельно для каждого скина")]
+    [SerializeField] SkinScoreDamageEntry[] skinScoreDamages;
+
+    public int GetBaseScoreDamage(BallSkinId skinId)
+    {
+        EnsureSkinDamagesPopulated();
+
+        if (skinScoreDamages != null)
+        {
+            for (int i = 0; i < skinScoreDamages.Length; i++)
+            {
+                if (skinScoreDamages[i].skinId == skinId)
+                    return Mathf.Max(1, skinScoreDamages[i].baseScoreDamage);
+            }
+        }
+
+        return Mathf.Max(1, defaultScoreDamage);
+    }
+
+    public void EnsureSkinDamagesPopulated()
+    {
+        BallSkinId[] allSkins = (BallSkinId[])Enum.GetValues(typeof(BallSkinId));
+        if (skinScoreDamages == null || skinScoreDamages.Length == 0)
+        {
+            skinScoreDamages = CreateDefaultSkinDamages(allSkins, defaultScoreDamage);
+            return;
+        }
+
+        bool changed = false;
+        var merged = new List<SkinScoreDamageEntry>(skinScoreDamages);
+        for (int i = 0; i < allSkins.Length; i++)
+        {
+            BallSkinId skin = allSkins[i];
+            if (ContainsSkin(merged, skin))
+                continue;
+
+            merged.Add(new SkinScoreDamageEntry
+            {
+                skinId = skin,
+                baseScoreDamage = defaultScoreDamage
+            });
+            changed = true;
+        }
+
+        if (changed)
+            skinScoreDamages = merged.ToArray();
+    }
+
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        if (defaultScoreDamage < 1)
+            defaultScoreDamage = 1;
+
+        EnsureSkinDamagesPopulated();
+    }
+#endif
+
+    static bool ContainsSkin(List<SkinScoreDamageEntry> list, BallSkinId skinId)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].skinId == skinId)
+                return true;
+        }
+
+        return false;
+    }
+
+    static SkinScoreDamageEntry[] CreateDefaultSkinDamages(BallSkinId[] allSkins, int damage)
+    {
+        damage = Mathf.Max(1, damage);
+        var entries = new SkinScoreDamageEntry[allSkins.Length];
+        for (int i = 0; i < allSkins.Length; i++)
+        {
+            entries[i] = new SkinScoreDamageEntry
+            {
+                skinId = allSkins[i],
+                baseScoreDamage = damage
+            };
+        }
+
+        return entries;
+    }
 
     [Header("Dragon — множитель урона от дистанции полёта")]
     [Tooltip("Множитель = метры × это значение (минимум 1). То же число показывается на иконке.")]
@@ -24,8 +121,9 @@ public sealed class BallAbilityConfig : ScriptableObject
     /// <summary>Итоговый урон гола для Дракона с учётом множителя.</summary>
     public int ComputeDragonScoreDamage(float flightDistanceMeters)
     {
+        int baseDamage = GetBaseScoreDamage(BallSkinId.Dragon);
         float multiplier = ComputeDragonDamageMultiplier(flightDistanceMeters);
-        return Mathf.Max(1, Mathf.RoundToInt(baseScoreDamage * multiplier));
+        return Mathf.Max(1, Mathf.RoundToInt(baseDamage * multiplier));
     }
 
     /// <summary>Текст множителя для UI (не метры полёта).</summary>
