@@ -14,6 +14,7 @@ public sealed partial class MainMenuUI
         "ProfileOverlay",
         "DailyTaskOverlay",
         "SettingsOverlay",
+        "LanguageOverlay",
         "Toast"
     };
 
@@ -31,14 +32,16 @@ public sealed partial class MainMenuUI
         EnsureSkinCatalog();
         InitDailyTaskDefinitions();
 
-        _style = new MainMenuUiStyle { Font = fontAsset };
+        _style = new MainMenuUiStyle { Font = fontAsset ?? MainMenuUiFantasyAssets.LoadFont() };
         GetOrCreateToast();
 
         BuildHub();
         BuildPanels();
         BuildSettingsOverlay();
+        BuildLanguageOverlay();
         CloseAllOverlays();
         SaveUiReferences();
+        WireUiListeners(GetComponent<MainMenuUiReferences>());
         RefreshHub();
 
 #if UNITY_EDITOR
@@ -72,6 +75,7 @@ public sealed partial class MainMenuUI
 
         _hubRoot = null;
         _settingsOverlay = null;
+        _languageOverlay = null;
         _shopPanel = null;
         _goldShopPanel = null;
         _charactersPanel = null;
@@ -100,6 +104,7 @@ public sealed partial class MainMenuUI
     {
         _hubRoot = refs.HubRoot;
         _settingsOverlay = refs.SettingsOverlay;
+        _languageOverlay = refs.LanguageOverlay;
         _playerNameLabel = refs.PlayerNameLabel;
         _levelBadgeLabel = refs.LevelBadgeLabel;
         _xpLabel = refs.XpLabel;
@@ -114,13 +119,32 @@ public sealed partial class MainMenuUI
         _taskProgressFills.Clear();
         _taskProgressFills.AddRange(refs.TaskProgressFills);
         _settingsTitle = refs.SettingsTitle;
-        _languageLabel = refs.LanguageLabel;
-        _soundLabel = refs.SoundLabel;
-        _volumeLabel = refs.VolumeLabel;
-        _soundToggle = refs.SoundToggle;
-        _volumeSlider = refs.VolumeSlider;
+        _soundFxSlider = refs.SoundFxSlider;
+        _musicSlider = refs.MusicSlider;
+        _languageOpenButton = refs.LanguageOpenButton;
         _langRuButton = refs.LangRuButton;
         _langEnButton = refs.LangEnButton;
+        _langTrButton = refs.LangTrButton;
+        _languageCloseButton = refs.LanguageCloseButton;
+
+        if (_settingsOverlay != null && refs.LanguageOpenButton != null)
+        {
+            Transform settings = MainMenuUiFantasyAssets.FindDeepChild(_settingsOverlay.transform, "Settings");
+            Transform buttons = settings != null ? settings.Find("Buttons") : null;
+            if (buttons != null && buttons.childCount > 0)
+            {
+                TMP_Text[] labels = buttons.GetChild(0).GetComponentsInChildren<TMP_Text>(true);
+                for (int i = 0; i < labels.Length; i++)
+                {
+                    if (labels[i].gameObject.name == "Text")
+                    {
+                        _languagePreviewLabel = labels[i];
+                        break;
+                    }
+                }
+            }
+        }
+
         _playNavLabel = refs.PlayNavLabel;
         _shopNavLabel = refs.ShopNavLabel;
         _charsNavLabel = refs.CharsNavLabel;
@@ -145,7 +169,6 @@ public sealed partial class MainMenuUI
 
     void WireUiListeners(MainMenuUiReferences refs)
     {
-        WireButton(refs.ProfileOpenButton, OpenProfile);
         WireButton(refs.GoldPlusButton, OpenGoldShop);
         WireButton(refs.SettingsButton, OpenSettings);
         WireButton(refs.PlayNavButton, StartGame);
@@ -158,28 +181,27 @@ public sealed partial class MainMenuUI
             WireButton(refs.DailyTaskButtons[captured], () => OpenDailyTask(captured));
         }
 
-        if (_soundToggle != null)
+        if (_soundFxSlider != null)
         {
-            _soundToggle.onValueChanged.RemoveListener(OnSoundToggleChanged);
-            _soundToggle.onValueChanged.AddListener(OnSoundToggleChanged);
+            _soundFxSlider.onValueChanged.RemoveListener(OnSoundFxChanged);
+            _soundFxSlider.onValueChanged.AddListener(OnSoundFxChanged);
         }
 
-        if (_volumeSlider != null)
+        if (_musicSlider != null)
         {
-            _volumeSlider.onValueChanged.RemoveListener(OnVolumeChanged);
-            _volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
+            _musicSlider.onValueChanged.RemoveListener(OnMusicChanged);
+            _musicSlider.onValueChanged.AddListener(OnMusicChanged);
         }
 
+        WireButton(_languageOpenButton, OpenLanguageOverlay);
+        WireButton(_languageCloseButton, CloseLanguageOverlay);
         WireButton(_langRuButton, () => SetLanguage(MenuLanguage.Russian));
         WireButton(_langEnButton, () => SetLanguage(MenuLanguage.English));
+        WireButton(_langTrButton, () => SetLanguage(MenuLanguage.Turkish));
 
         if (_settingsOverlay != null)
         {
-            Transform backdrop = _settingsOverlay.transform.Find("Backdrop");
-            if (backdrop != null)
-                WireButton(backdrop.GetComponent<Button>(), CloseAllOverlays);
-
-            Button closeButton = _settingsOverlay.transform.Find("Panel/CloseButton")?.GetComponent<Button>();
+            Button closeButton = MainMenuUiFantasyAssets.FindButton(_settingsOverlay.transform, "Button_Back");
             WireButton(closeButton, CloseAllOverlays);
         }
     }
@@ -211,6 +233,7 @@ public sealed partial class MainMenuUI
 
         refs.HubRoot = _hubRoot;
         refs.SettingsOverlay = _settingsOverlay;
+        refs.LanguageOverlay = _languageOverlay;
 
         refs.PlayerNameLabel = _playerNameLabel;
         refs.LevelBadgeLabel = _levelBadgeLabel;
@@ -225,38 +248,61 @@ public sealed partial class MainMenuUI
         refs.TaskProgressFills = new List<Image>(_taskProgressFills);
 
         refs.SettingsTitle = _settingsTitle;
-        refs.LanguageLabel = _languageLabel;
-        refs.SoundLabel = _soundLabel;
-        refs.VolumeLabel = _volumeLabel;
-        refs.SoundToggle = _soundToggle;
-        refs.VolumeSlider = _volumeSlider;
+        refs.SoundFxSlider = _soundFxSlider;
+        refs.MusicSlider = _musicSlider;
+        refs.LanguageOpenButton = _languageOpenButton;
         refs.LangRuButton = _langRuButton;
         refs.LangEnButton = _langEnButton;
+        refs.LangTrButton = _langTrButton;
+        refs.LanguageCloseButton = _languageCloseButton;
+
+        if (refs.LangRuButton == null || refs.LangEnButton == null || refs.LangTrButton == null)
+        {
+            Transform languageRoot = _languageOverlay != null
+                ? MainMenuUiFantasyAssets.FindDeepChild(_languageOverlay.transform, "LanguageFlag_List")
+                : null;
+            if (languageRoot != null)
+            {
+                if (refs.LangRuButton == null)
+                    refs.LangRuButton = MainMenuUiFantasyAssets.FindButton(languageRoot, "LangRu");
+                if (refs.LangEnButton == null)
+                    refs.LangEnButton = MainMenuUiFantasyAssets.FindButton(languageRoot, "LangEn");
+                if (refs.LangTrButton == null)
+                    refs.LangTrButton = MainMenuUiFantasyAssets.FindButton(languageRoot, "LangTr");
+            }
+        }
+
+        if (refs.LanguageOpenButton == null && _settingsOverlay != null)
+        {
+            Transform settings = MainMenuUiFantasyAssets.FindDeepChild(_settingsOverlay.transform, "Settings");
+            Transform buttons = settings != null ? settings.Find("Buttons") : null;
+            if (buttons != null && buttons.childCount > 0)
+                refs.LanguageOpenButton = buttons.GetChild(0).GetComponentInChildren<Button>(true);
+        }
 
         refs.PlayNavLabel = _playNavLabel;
         refs.ShopNavLabel = _shopNavLabel;
         refs.CharsNavLabel = _charsNavLabel;
 
-        refs.ProfileOpenButton = _hubRoot?.transform.Find("ProfilePanel")?.GetComponent<Button>();
-        refs.GoldPlusButton = _hubRoot?.transform.Find("TopRightBar/Gold/GoldPlusButton")?.GetComponent<Button>();
-        refs.SettingsButton = _hubRoot?.transform.Find("TopRightBar/SettingsButton")?.GetComponent<Button>();
-
-        refs.PlayNavButton = FindNavButton(0);
-        refs.ShopNavButton = FindNavButton(1);
-        refs.CharsNavButton = FindNavButton(2);
+        MainMenuUiFantasyAssets.HomeBindings fantasy = MainMenuUiFantasyAssets.BindHomeHub(_hubRoot.transform);
+        refs.GoldPlusButton = fantasy.GoldPlusButton;
+        refs.SettingsButton = fantasy.SettingsButton;
+        refs.PlayNavButton = fantasy.PlayButton;
+        refs.ShopNavButton = fantasy.ShopButton;
+        refs.CharsNavButton = fantasy.CharactersButton;
 
         refs.DailyTaskButtons.Clear();
-        if (_hubRoot != null)
+        Transform dailyPanel = MainMenuUiFantasyAssets.FindDeepChild(_hubRoot.transform, "DailyTasksPanel");
+        Transform taskContent = dailyPanel != null
+            ? MainMenuUiFantasyAssets.FindDeepChild(dailyPanel, "Content")
+            : null;
+        if (taskContent != null)
         {
-            Transform daily = _hubRoot.transform.Find("DailyTasks");
-            if (daily != null)
+            for (int i = 0; i < 3; i++)
             {
-                for (int i = 0; i < 3; i++)
-                {
-                    Transform row = daily.Find($"Task_{i}");
-                    if (row != null)
-                        refs.DailyTaskButtons.Add(row.GetComponent<Button>());
-                }
+                Transform row = taskContent.Find($"Task_{i}");
+                if (row != null)
+                    refs.DailyTaskButtons.Add(row.GetComponent<Button>());
             }
         }
 
@@ -266,27 +312,5 @@ public sealed partial class MainMenuUI
         refs.ProfileOverlay = targetCanvas.transform.Find("ProfileOverlay")?.gameObject;
         refs.DailyTaskOverlay = targetCanvas.transform.Find("DailyTaskOverlay")?.gameObject;
         refs.ToastRoot = targetCanvas.transform.Find("Toast")?.gameObject;
-    }
-
-    Button FindNavButton(int index)
-    {
-        Transform bottom = _hubRoot?.transform.Find("BottomNav");
-        if (bottom == null || index >= bottom.childCount)
-            return null;
-
-        return bottom.GetChild(index).GetComponent<Button>();
-    }
-
-    static Button FindButtonInChildren(Transform root, string pathPrefix, string childName)
-    {
-        if (root == null)
-            return null;
-
-        Transform parent = root.Find(pathPrefix);
-        if (parent == null)
-            return null;
-
-        Transform button = parent.Find(childName);
-        return button != null ? button.GetComponent<Button>() : parent.GetComponentInChildren<Button>();
     }
 }

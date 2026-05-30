@@ -22,19 +22,20 @@ public sealed class MainMenuUiReferences : MonoBehaviour
     public List<Image> TaskProgressFills = new();
 
     public TMP_Text SettingsTitle;
-    public TMP_Text LanguageLabel;
-    public TMP_Text SoundLabel;
-    public TMP_Text VolumeLabel;
-    public Toggle SoundToggle;
-    public Slider VolumeSlider;
+    public Slider SoundFxSlider;
+    public Slider MusicSlider;
+    public Button LanguageOpenButton;
     public Button LangRuButton;
     public Button LangEnButton;
+    public Button LangTrButton;
+    public Button LanguageCloseButton;
+
+    public GameObject LanguageOverlay;
 
     public TMP_Text PlayNavLabel;
     public TMP_Text ShopNavLabel;
     public TMP_Text CharsNavLabel;
 
-    public Button ProfileOpenButton;
     public Button GoldPlusButton;
     public Button SettingsButton;
     public Button PlayNavButton;

@@ -32,6 +32,10 @@ public sealed class MainMenuCharactersPanel : MainMenuOverlayPanel
 
     protected override string GetOverlayName() => "CharactersOverlay";
 
+    protected override string GetFantasyPrefabPath() => MainMenuUiFantasyAssets.CharactersPanelPath;
+
+    protected override string GetFantasyPanelRootName() => "CharacterSelect";
+
     protected override Vector2 GetPanelSize() => new Vector2(920f, 640f);
 
     protected override void BuildContent(Transform panel)

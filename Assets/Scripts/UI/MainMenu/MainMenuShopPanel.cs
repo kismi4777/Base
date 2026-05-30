@@ -17,6 +17,11 @@ public sealed class MainMenuShopPanel : MainMenuOverlayPanel
 
     protected override string GetOverlayName() => _isGoldShop ? "GoldShopOverlay" : "ShopOverlay";
 
+    protected override string GetFantasyPrefabPath() =>
+        _isGoldShop ? MainMenuUiFantasyAssets.GoldShopPanelPath : MainMenuUiFantasyAssets.ShopPanelPath;
+
+    protected override string GetFantasyPanelRootName() => _isGoldShop ? "Shop_Gold" : "Shop_Chest";
+
     protected override Vector2 GetPanelSize() => _isGoldShop ? new Vector2(560f, 480f) : new Vector2(900f, 620f);
 
     protected override void BuildContent(Transform panel)

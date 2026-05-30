@@ -16,6 +16,10 @@ public sealed class MainMenuProfilePanel : MainMenuOverlayPanel
 
     protected override string GetOverlayName() => "ProfileOverlay";
 
+    protected override string GetFantasyPrefabPath() => MainMenuUiFantasyAssets.ProfilePanelPath;
+
+    protected override string GetFantasyPanelRootName() => "Character";
+
     protected override Vector2 GetPanelSize() => new Vector2(520f, 360f);
 
     protected override void BuildContent(Transform panel)

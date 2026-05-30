@@ -20,6 +20,10 @@ public class HoopSpawner : MonoBehaviour
     [Tooltip("Если задано, кольцо не появится на той же точке, что и у другого HoopSpawner.")]
     [SerializeField] HoopSpawner spawnPeer;
     [SerializeField] bool excludePeerSpawnPoint = true;
+    [Tooltip("Не спавнить в той же вертикальной колонке (одинаковый X), что и кольцо соперника — нельзя оказаться над/под ним.")]
+    [SerializeField] bool excludePeerSameColumn = true;
+    [SerializeField] float columnWorldXTolerance = 0.25f;
+    [SerializeField] float columnMinVerticalSeparation = 0.3f;
 
     [Header("PvP: чьё кольцо спавнит этот спавнер")]
     [SerializeField] bool configurePvPFilterOnSpawn = true;
@@ -187,14 +191,33 @@ public class HoopSpawner : MonoBehaviour
     /// </summary>
     public void InstantRelocateIfSameIndexAsPeer()
     {
-        if (spawnPeer == null || !excludePeerSpawnPoint || _currentHoop == null || _spawnPoints.Count <= 1)
+        if (spawnPeer == null || _currentHoop == null || _spawnPoints.Count <= 1)
             return;
 
-        if (_currentSpawnIndex != spawnPeer.CurrentSpawnIndex)
+        if (!HasOverlappingPeerSpawn())
             return;
 
         int next = PickRandomSpawnIndex(-1);
         PlaceHoopAtSpawnPoint(_currentHoop.transform, next);
+    }
+
+    /// <summary>
+    /// Совпадает индекс точки с соперником или та же вертикальная колонка (над/под чужим кольцом).
+    /// </summary>
+    public bool HasOverlappingPeerSpawn()
+    {
+        if (spawnPeer == null || _currentSpawnIndex < 0 || spawnPeer.CurrentSpawnIndex < 0)
+            return false;
+
+        if (excludePeerSpawnPoint && _currentSpawnIndex == spawnPeer.CurrentSpawnIndex)
+            return true;
+
+        if (!excludePeerSameColumn)
+            return false;
+
+        return IsVerticallyStackedWith(
+            _spawnPoints[_currentSpawnIndex].position,
+            spawnPeer.GetSpawnWorldPosition(spawnPeer.CurrentSpawnIndex));
     }
 
     void PlaceHoopAtSpawnPoint(Transform hoopTransform, int spawnIndex)
@@ -211,6 +234,10 @@ public class HoopSpawner : MonoBehaviour
             return 0;
 
         int peerExcluded = spawnPeer != null && excludePeerSpawnPoint ? spawnPeer.CurrentSpawnIndex : -1;
+        Vector3 peerWorldPosition = spawnPeer != null && excludePeerSameColumn && spawnPeer.CurrentSpawnIndex >= 0
+            ? spawnPeer.GetSpawnWorldPosition(spawnPeer.CurrentSpawnIndex)
+            : default;
+        bool blockPeerColumn = spawnPeer != null && excludePeerSameColumn && spawnPeer.CurrentSpawnIndex >= 0;
         bool excludeSelfPrevious = avoidSameSpawnPoint && excludedIndex >= 0;
 
         int start = Random.Range(0, count);
@@ -221,16 +248,36 @@ public class HoopSpawner : MonoBehaviour
                 continue;
             if (peerExcluded >= 0 && candidate == peerExcluded)
                 continue;
+            if (blockPeerColumn && IsVerticallyStackedWith(_spawnPoints[candidate].position, peerWorldPosition))
+                continue;
             return candidate;
         }
 
         for (int i = 0; i < count; i++)
         {
-            if ((!excludeSelfPrevious || i != excludedIndex) && (peerExcluded < 0 || i != peerExcluded))
-                return i;
+            if (excludeSelfPrevious && i == excludedIndex)
+                continue;
+            if (peerExcluded >= 0 && i == peerExcluded)
+                continue;
+            if (blockPeerColumn && IsVerticallyStackedWith(_spawnPoints[i].position, peerWorldPosition))
+                continue;
+            return i;
         }
 
         return 0;
+    }
+
+    Vector3 GetSpawnWorldPosition(int spawnIndex)
+    {
+        return _spawnPoints[spawnIndex].position;
+    }
+
+    bool IsVerticallyStackedWith(Vector3 candidateWorld, Vector3 otherWorld)
+    {
+        if (Mathf.Abs(candidateWorld.x - otherWorld.x) > columnWorldXTolerance)
+            return false;
+
+        return Mathf.Abs(candidateWorld.y - otherWorld.y) >= columnMinVerticalSeparation;
     }
 
     int FindClosestSpawnIndex(Vector3 worldPosition)

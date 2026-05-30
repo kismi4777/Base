@@ -39,6 +39,10 @@ public sealed class MainMenuDailyTaskPanel : MainMenuOverlayPanel
 
     protected override string GetOverlayName() => "DailyTaskOverlay";
 
+    protected override string GetFantasyPrefabPath() => MainMenuUiFantasyAssets.DailyTaskPanelPath;
+
+    protected override string GetFantasyPanelRootName() => "Mission";
+
     protected override Vector2 GetPanelSize() => new Vector2(560f, 400f);
 
     protected override void BuildContent(Transform panel)

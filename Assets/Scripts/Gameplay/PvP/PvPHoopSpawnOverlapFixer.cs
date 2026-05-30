@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// После первого кадра убирает совпадение индексов спавна двух колец (если порядок Start дал коллизию).
+/// После первого кадра убирает совпадение точки или вертикальной колонки спавна двух колец (если порядок Start дал коллизию).
 /// Повесьте на любой объект в сцене PvP и укажите оба HoopSpawner (у каждого в инспекторе уже задан spawnPeer).
 /// </summary>
 public sealed class PvPHoopSpawnOverlapFixer : MonoBehaviour
@@ -17,7 +17,7 @@ public sealed class PvPHoopSpawnOverlapFixer : MonoBehaviour
         if (primarySpawner == null || secondarySpawner == null)
             yield break;
 
-        if (primarySpawner.CurrentSpawnIndex != secondarySpawner.CurrentSpawnIndex)
+        if (!secondarySpawner.HasOverlappingPeerSpawn())
             yield break;
 
         secondarySpawner.InstantRelocateIfSameIndexAsPeer();

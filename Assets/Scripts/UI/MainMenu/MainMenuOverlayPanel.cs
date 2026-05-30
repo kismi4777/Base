@@ -21,8 +21,17 @@ public abstract class MainMenuOverlayPanel
 
     public bool IsOpen => Root != null && Root.activeSelf;
 
+    protected virtual string GetFantasyPrefabPath() => null;
+
     public virtual void Build()
     {
+        string fantasyPath = GetFantasyPrefabPath();
+        if (!string.IsNullOrEmpty(fantasyPath))
+        {
+            BuildFantasyOverlay(fantasyPath);
+            return;
+        }
+
         Root = MainMenuUiFactory.CreateUiObject(GetOverlayName(), Canvas.transform);
         MainMenuUiFactory.StretchFullScreen(Root);
 
@@ -71,6 +80,25 @@ public abstract class MainMenuOverlayPanel
         Root.SetActive(false);
     }
 
+    void BuildFantasyOverlay(string prefabPath)
+    {
+        Root = MainMenuUiFantasyAssets.BuildFantasyOverlay(GetOverlayName(), prefabPath, Canvas.transform);
+        Transform panelRoot = MainMenuUiFantasyAssets.FindDeepChild(Root.transform, GetFantasyPanelRootName())
+            ?? (Root.transform.childCount > 0 ? Root.transform.GetChild(0) : null);
+
+        TitleLabel = panelRoot != null
+            ? panelRoot.GetComponentInChildren<TMP_Text>(true)
+            : null;
+
+        MainMenuUiFantasyAssets.WireCloseButtons(Root.transform, () => Close());
+        Root.SetActive(false);
+    }
+
+    protected virtual string GetFantasyPanelRootName()
+    {
+        return GetOverlayName().Replace("Overlay", string.Empty);
+    }
+
     protected abstract string GetOverlayName();
     protected abstract Vector2 GetPanelSize();
     protected abstract void BuildContent(Transform panel);
@@ -107,24 +135,33 @@ public abstract class MainMenuOverlayPanel
             return false;
 
         Root = found.gameObject;
+
         Transform panel = Root.transform.Find("Panel");
-        if (panel == null)
-            return false;
-
-        TitleLabel = panel.Find("Title")?.GetComponent<TMP_Text>();
-
-        Transform back = panel.Find("BackButton");
-        if (back != null)
+        if (panel != null)
         {
-            Button backButton = back.GetComponent<Button>();
-            if (backButton != null)
+            TitleLabel = panel.Find("Title")?.GetComponent<TMP_Text>();
+
+            Transform back = panel.Find("BackButton");
+            if (back != null)
             {
-                backButton.onClick.RemoveAllListeners();
-                backButton.onClick.AddListener(() => Close());
+                Button backButton = back.GetComponent<Button>();
+                if (backButton != null)
+                {
+                    backButton.onClick.RemoveAllListeners();
+                    backButton.onClick.AddListener(() => Close());
+                }
             }
+
+            return true;
         }
 
-        return true;
+        if (!string.IsNullOrEmpty(GetFantasyPrefabPath()))
+        {
+            MainMenuUiFantasyAssets.WireCloseButtons(Root.transform, () => Close());
+            return true;
+        }
+
+        return false;
     }
 
     protected static void BlockPanelClickPropagation(GameObject panel)

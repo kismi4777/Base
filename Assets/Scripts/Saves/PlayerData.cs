@@ -7,6 +7,9 @@ public class PlayerData
     public int HighScore;
     public bool IsSoundOn = true;
     public float SoundVolume = 1f;
+    public bool PushAlarmOn = true;
+    public float MusicVolume = 0.5f;
+    public bool VibrationOn;
 
     public string PlayerName = "Игрок";
     public int Level = 1;

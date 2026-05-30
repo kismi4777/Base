@@ -3,7 +3,8 @@ using System;
 public enum MenuLanguage
 {
     Russian = 0,
-    English = 1
+    English = 1,
+    Turkish = 2
 }
 
 public static class MenuLocalization
@@ -30,8 +31,12 @@ public static class MenuLocalization
         if (SaveManager.Instance == null)
             return;
 
-        int code = SaveManager.Instance.Data.Language;
-        _language = code == 1 ? MenuLanguage.English : MenuLanguage.Russian;
+        _language = SaveManager.Instance.Data.Language switch
+        {
+            1 => MenuLanguage.English,
+            2 => MenuLanguage.Turkish,
+            _ => MenuLanguage.Russian
+        };
     }
 
     public static void SaveToPlayerData()
@@ -43,6 +48,20 @@ public static class MenuLocalization
         SaveManager.Instance.Save();
     }
 
-    public static string Get(string ru, string en) =>
-        _language == MenuLanguage.English ? en : ru;
+    public static string GetLanguageDisplayName() => Current switch
+    {
+        MenuLanguage.English => "English",
+        MenuLanguage.Turkish => "Türkçe",
+        _ => "Русский"
+    };
+
+    public static string Get(string ru, string en, string tr = null)
+    {
+        return Current switch
+        {
+            MenuLanguage.English => en,
+            MenuLanguage.Turkish => tr ?? en,
+            _ => ru
+        };
+    }
 }
